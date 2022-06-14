@@ -168,7 +168,9 @@ def parse_config(argv=None):
                         help='Which joints to use for initializing the camera')
     parser.add_argument('--body_tri_idxs', nargs='*',
                         #  default='5.12,2.9',
+                        #°°°°°°
                         default=[5, 12, 2, 9],
+                        #default=[10, 20, 14, 24],
                         type=int,
                         help='The indices of the joints used to estimate' +
                         ' the initial depth of the camera. The format' +

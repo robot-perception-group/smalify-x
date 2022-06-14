@@ -102,7 +102,7 @@ def read_keypoints(keypoint_fn, use_hands=True, use_face=True,
 
 class OpenPose(Dataset):
 
-    NUM_BODY_JOINTS = 25
+    NUM_BODY_JOINTS = 33#°°°°°°°°°°25
     NUM_HAND_JOINTS = 20
 
     def __init__(self, data_folder, img_folder='images',
@@ -164,6 +164,7 @@ class OpenPose(Dataset):
         # annotation of the hips is ambiguous.
         if self.joints_to_ign is not None and -1 not in self.joints_to_ign:
             optim_weights[self.joints_to_ign] = 0.
+        print('°°°°° optim_weights', optim_weights)
         return torch.tensor(optim_weights, dtype=self.dtype)
 
     def __len__(self):

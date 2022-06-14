@@ -1,0 +1,79 @@
+°°°°°^  data_folder : data
+°°°°°^  max_persons : 3
+°°°°°^  config : cfg_files/fit_smpl.yaml
+°°°°°^  loss_type : smplify
+°°°°°^  interactive : True
+°°°°°^  save_meshes : True
+°°°°°^  visualize : True
+°°°°°^  degrees : [0, 90, 180, 270]
+°°°°°^  use_cuda : True
+°°°°°^  dataset : openpose
+°°°°°^  joints_to_ign : [1, 9, 12]
+°°°°°^  output_folder : output
+°°°°°^  img_folder : images
+°°°°°^  keyp_folder : keypoints
+°°°°°^  summary_folder : summaries
+°°°°°^  result_folder : results
+°°°°°^  mesh_folder : meshes
+°°°°°^  gender_lbl_type : none
+°°°°°^  gender : neutral
+°°°°°^  float_dtype : float32
+°°°°°^  model_type : smpl
+°°°°°^  camera_type : persp
+°°°°°^  optim_jaw : True
+°°°°°^  optim_hands : True
+°°°°°^  optim_expression : True
+°°°°°^  optim_shape : True
+°°°°°^  model_folder : /home/frg08/Code/smplify-x/smpl/models/smpl_female.pkl
+°°°°°^  use_joints_conf : True
+°°°°°^  batch_size : 1
+°°°°°^  num_gaussians : 8
+°°°°°^  use_pca : True
+°°°°°^  num_pca_comps : 12
+°°°°°^  flat_hand_mean : False
+°°°°°^  body_prior_type : l2
+°°°°°^  left_hand_prior_type : l2
+°°°°°^  right_hand_prior_type : l2
+°°°°°^  jaw_prior_type : l2
+°°°°°^  use_vposer : True
+°°°°°^  vposer_ckpt : /home/frg08/Code/smplify-x/V02_05/
+°°°°°^  init_joints_idxs : [9, 12, 2, 5]
+°°°°°^  body_tri_idxs : [(5, 12), (2, 9)]
+°°°°°^  prior_folder : priors
+°°°°°^  focal_length : 5000.0
+°°°°°^  rho : 100.0
+°°°°°^  interpenetration : False
+°°°°°^  penalize_outside : True
+°°°°°^  data_weights : [1.0, 1.0, 1.0, 1.0]
+°°°°°^  body_pose_prior_weights : [404.0, 404.0, 57.4, 4.78]
+°°°°°^  shape_weights : [100.0, 50.0, 10.0, 5.0]
+°°°°°^  expr_weights : [100.0, 50.0, 10.0, 5.0]
+°°°°°^  face_joints_weights : [0.0, 0.0, 0.0, 2.0]
+°°°°°^  hand_joints_weights : [0.0, 0.0, 0.0, 2.0]
+°°°°°^  jaw_pose_prior_weights : None
+°°°°°^  hand_pose_prior_weights : [100.0, 50.0, 10.0, 5.0]
+°°°°°^  coll_loss_weights : [0.0, 0.0, 0.01, 1.0]
+°°°°°^  depth_loss_weight : 100.0
+°°°°°^  df_cone_height : 0.0001
+°°°°°^  max_collisions : 128
+°°°°°^  point2plane : False
+°°°°°^  part_segm_fn : 
+°°°°°^  ign_part_pairs : ['9,16', '9,17', '6,16', '6,17', '1,2', '12,22']
+°°°°°^  use_hands : False
+°°°°°^  use_face : False
+°°°°°^  use_face_contour : False
+°°°°°^  side_view_thsh : 25
+°°°°°^  optim_type : lbfgsls
+°°°°°^  lr : 1.0
+°°°°°^  gtol : 1e-09
+°°°°°^  ftol : 1e-09
+°°°°°^  maxiters : 30
+
+
+shapedirs
+f
+v_template
+J_regressor
+posedirs
+kintree_table
+weights

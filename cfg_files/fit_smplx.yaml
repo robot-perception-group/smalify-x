@@ -28,7 +28,7 @@ focal_length: 5000
 num_pca_comps: 12
 # The constant for the robust loss function
 rho: 100
-interpenetration: True
+interpenetration: False
 df_cone_height: 0.0001
 # Upper arms and Spine 2
 # Neck and jaw

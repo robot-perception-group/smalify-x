@@ -93,8 +93,9 @@ if __name__ == '__main__':
         est_params = {}
         for key, val in data.items():
             if key == 'body_pose' and use_vposer:
-                body_pose = vposer.decode(
-                    pose_embedding, output_type='aa').view(1, -1)
+                #body_pose = vposer.decode(
+                #    pose_embedding, output_type='aa').view(1, -1)
+                body_pose = (vposer.decode(pose_embedding).get( 'pose_body')).reshape(1, -1)
                 if model_type == 'smpl':
                     wrist_pose = torch.zeros([body_pose.shape[0], 6],
                                              dtype=body_pose.dtype,

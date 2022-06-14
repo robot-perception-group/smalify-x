@@ -30,6 +30,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+from animal_shape_prior import MultiShapePrior
+
 DEFAULT_DTYPE = torch.float32
 
 
@@ -38,6 +40,10 @@ def create_prior(prior_type, **kwargs):
         prior = MaxMixturePrior(**kwargs)
     elif prior_type == 'l2':
         return L2Prior(**kwargs)
+    elif prior_type == 'mahalanobis_shape':
+        return MahalanobisShapePrior(**kwargs)
+    elif prior_type == 'mahalanobis_body_prior':
+        return MahalanobisBodyPrior(**kwargs)
     elif prior_type == 'angle':
         return SMPLifyAnglePrior(**kwargs)
     elif prior_type == 'none' or prior_type is None:
@@ -87,6 +93,65 @@ class SMPLifyAnglePrior(nn.Module):
         angle_prior_idxs = self.angle_prior_idxs - (not with_global_pose) * 3
         return torch.exp(pose[:, angle_prior_idxs] *
                          self.angle_prior_signs).pow(2)
+
+# °°°°°°°
+'''class L2PriorShape(nn.Module):
+    def __init__(self, dtype=DEFAULT_DTYPE, reduction='sum', **kwargs):
+        super(L2PriorShape, self).__init__()
+        shape_prior = MultiShapePrior(family_name='horse', data_name='smplifyx/smal_data_00781_4_all.pkl')
+        self.register_buffer('animal_betas', torch.tensor(shape_prior.mu, dtype=dtype))
+        animal_betas = getattr(self, 'animal_betas')
+        #print('°°°°°°° animal_betas \n', animal_betas)
+        #body_model.betas[:] = torch.from_numpy(shape_prior.mu).to(device)
+
+    def forward(self, module_input, *args):
+        animal_betas = getattr(self, 'animal_betas')
+        return torch.sum((module_input-animal_betas).pow(2))'''
+
+class MahalanobisShapePrior(nn.Module):
+    def __init__(self, family_name='horse', data_name='smal_data_00781_4_all.pkl', dtype=DEFAULT_DTYPE, reduction='sum', **kwargs):
+        super(MahalanobisShapePrior, self).__init__()
+
+        shape_prior = MultiShapePrior(family_name='horse', data_name='smplifyx/smal_data_00781_4_all.pkl')
+        self.register_buffer('mu', torch.tensor(shape_prior.mu, dtype=dtype))
+        self.register_buffer('prec', torch.tensor(shape_prior.prec, dtype=dtype))
+
+    def forward(self, input_betas, *args):
+        #return (input_betas[0] - self.mu[:len(input_betas[0])]).dot(self.prec[:len(input_betas[0]), :len(input_betas[0])])
+        loss = torch.sum(torch.square(torch.matmul(input_betas[0][:20] - self.mu[:20],self.prec[:20,:20])))/torch.Tensor([20])
+        #print("PriorShape: ", loss, "\n")
+        return loss
+
+
+
+
+
+
+class MahalanobisBodyPrior(nn.Module):
+    def __init__(self, dtype=DEFAULT_DTYPE, **kwargs):
+        super(MahalanobisBodyPrior, self).__init__()
+
+        prior_path = 'smplifyx/walking_toy_symmetric_pose_prior_with_cov_35parts.pkl'
+        with open(prior_path, 'rb') as f:
+            res = pickle.load(f, encoding='latin1')
+        self.register_buffer('precs', torch.tensor(np.array(res['pic']), dtype=dtype))
+        self.register_buffer('mu', torch.tensor(res['mean_pose'], dtype=dtype))
+        prefix = 3
+        if '35parts' in prior_path:
+            pose_len = 105
+        else:
+            raise ValueError('"35parts" not in pose prior name')
+
+        self.use_ind = np.ones(pose_len, dtype=bool)
+        #self.use_ind[:prefix] = False
+
+    def forward(self, x, *args):
+        dummy_loss = torch.matmul(x[0] - self.mu, self.precs) # SMALR loss
+        loss = torch.sum(torch.square(torch.matmul(x[0] - self.mu, self.precs))) / torch.Tensor([102])
+        #print("PriorPose: ", loss, "\n")
+        return loss
+
+
 
 
 class L2Prior(nn.Module):

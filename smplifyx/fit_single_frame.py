@@ -43,7 +43,9 @@ import PIL.Image as pil_img
 from optimizers import optim_factory
 
 import fitting
-from human_body_prior.tools.model_loader import load_vposer
+#from human_body_prior.tools.model_loader import load_vposer
+from human_body_prior.tools.model_loader import load_model 
+from human_body_prior.models.vposer_model import VPoser
 
 
 def fit_single_frame(img,
@@ -119,7 +121,7 @@ def fit_single_frame(img,
     assert (len(data_weights) ==
             len(body_pose_prior_weights)), msg
 
-    if use_hands:
+    '''if use_hands:
         if hand_pose_prior_weights is None:
             hand_pose_prior_weights = [1e2, 5 * 1e1, 1e1, .5 * 1e1]
         msg = ('Number of Body pose prior weights does not match the' +
@@ -131,7 +133,7 @@ def fit_single_frame(img,
             msg = ('Number of Body pose prior weights does not match the' +
                    ' number of hand joint distance weights')
             assert (len(hand_joints_weights) ==
-                    len(body_pose_prior_weights)), msg
+                    len(body_pose_prior_weights)), msg'''
 
     if shape_weights is None:
         shape_weights = [1e2, 5 * 1e1, 1e1, .5 * 1e1]
@@ -142,7 +144,7 @@ def fit_single_frame(img,
                 len(shape_weights),
                 len(body_pose_prior_weights))
 
-    if use_face:
+    '''if use_face:
         if jaw_pose_prior_weights is None:
             jaw_pose_prior_weights = [[x] * 3 for x in shape_weights]
         else:
@@ -168,7 +170,7 @@ def fit_single_frame(img,
         msg = ('Number of Body pose prior weights does not match the' +
                ' number of face joint distance weights')
         assert (len(face_joints_weights) ==
-                len(body_pose_prior_weights)), msg
+                len(body_pose_prior_weights)), msg'''
 
     if coll_loss_weights is None:
         coll_loss_weights = [0.0] * len(body_pose_prior_weights)
@@ -185,20 +187,30 @@ def fit_single_frame(img,
                                      requires_grad=True)
 
         vposer_ckpt = osp.expandvars(vposer_ckpt)
-        vposer, _ = load_vposer(vposer_ckpt, vp_model='snapshot')
+        #vposer, _ = load_vposer(vposer_ckpt, vp_model='snapshot')
+        vposer, _ = load_model(vposer_ckpt, model_code=VPoser, remove_words_in_model_weights='vp_model.', disable_grad=True)
         vposer = vposer.to(device=device)
         vposer.eval()
 
+    # °°°°°°°°
     if use_vposer:
         body_mean_pose = torch.zeros([batch_size, vposer_latent_dim],
                                      dtype=dtype)
     else:
-        body_mean_pose = body_pose_prior.get_mean().detach().cpu()
+        #body_mean_pose = body_pose_prior.get_mean().detach().cpu()
+        #body_mean_pose = torch.zeros([batch_size, 102],dtype=dtype)
+        import os
+        os.system("pwd")
+        body_mean_pose = np.load('smplifyx/walking_toy_symmetric_35parts_mean_pose.npz')['mean_pose'][3:]
+
+    #print('°°°°°°° keypoints', keypoints)
 
     keypoint_data = torch.tensor(keypoints, dtype=dtype)
     gt_joints = keypoint_data[:, :, :2]
     if use_joints_conf:
         joints_conf = keypoint_data[:, :, 2].reshape(1, -1)
+
+    #print('°°°°°°° gt_joints:', gt_joints, gt_joints.shape)
 
     # Transfer the data to the correct device
     gt_joints = gt_joints.to(device=device, dtype=dtype)
@@ -209,7 +221,7 @@ def fit_single_frame(img,
     search_tree = None
     pen_distance = None
     filter_faces = None
-    if interpenetration:
+    '''if interpenetration:
         from mesh_intersection.bvh_search_tree import BVH
         import mesh_intersection.loss as collisions_loss
         from mesh_intersection.filter_faces import FilterFaces
@@ -237,13 +249,13 @@ def fit_single_frame(img,
             # Create the module used to filter invalid collision pairs
             filter_faces = FilterFaces(
                 faces_segm=faces_segm, faces_parents=faces_parents,
-                ign_part_pairs=ign_part_pairs).to(device=device)
+                ign_part_pairs=ign_part_pairs).to(device=device)'''
 
     # Weights used for the pose prior and the shape prior
     opt_weights_dict = {'data_weight': data_weights,
                         'body_pose_weight': body_pose_prior_weights,
                         'shape_weight': shape_weights}
-    if use_face:
+    '''if use_face:
         opt_weights_dict['face_weight'] = face_joints_weights
         opt_weights_dict['expr_prior_weight'] = expr_weights
         opt_weights_dict['jaw_prior_weight'] = jaw_pose_prior_weights
@@ -251,7 +263,7 @@ def fit_single_frame(img,
         opt_weights_dict['hand_weight'] = hand_joints_weights
         opt_weights_dict['hand_prior_weight'] = hand_pose_prior_weights
     if interpenetration:
-        opt_weights_dict['coll_loss_weight'] = coll_loss_weights
+        opt_weights_dict['coll_loss_weight'] = coll_loss_weights'''
 
     keys = opt_weights_dict.keys()
     opt_weights = [dict(zip(keys, vals)) for vals in
@@ -264,14 +276,17 @@ def fit_single_frame(img,
                                             dtype=dtype)
 
     # The indices of the joints used for the initialization of the camera
-    init_joints_idxs = torch.tensor(init_joints_idxs, device=device)
+    init_joints_idxs = torch.tensor([7, 18,  13,  18], device=device) # torch.tensor([23, 25,  13,  15], device=device)#torch.tensor(init_joints_idxs, device=device)
 
     edge_indices = kwargs.get('body_tri_idxs')
-    init_t = fitting.guess_init(body_model, gt_joints, edge_indices,
+
+    init_t = fitting.guess_init(body_model, gt_joints, [(7, 18), (13, 18)],#[(23, 25), (13, 15)],#edge_indices,
                                 use_vposer=use_vposer, vposer=vposer,
                                 pose_embedding=pose_embedding,
                                 model_type=kwargs.get('model_type', 'smpl'),
                                 focal_length=focal_length, dtype=dtype)
+    #init_t[0][2] = 15 #°°°°°°°
+    #print('°°°°°1 init_t \n', init_t)
 
     camera_loss = fitting.create_loss('camera_init',
                                       trans_estimation=init_t,
@@ -313,22 +328,59 @@ def fit_single_frame(img,
         # The closure passed to the optimizer
         camera_loss.reset_loss_weights({'data_weight': data_weight})
 
+
+
+
+
+        zebra_betas = [4.01370676e-01, 1.23658677e+00, -8.94257279e-01,
+                       3.19973349e-01, 7.19024035e-01, -1.05410595e-01,
+                       3.99230129e-01, 1.58862240e-01, 3.85614217e-01,
+                       -8.16620447e-02, 1.46995142e-01, -2.31515581e-01,
+                       -3.10253925e-01, -3.42558453e-01, -2.16503877e-01,
+                       4.97941459e-02, 8.76565450e-03, 1.12414110e-01,
+                       9.20290504e-02, 5.10690930e-02]  # , 7.17257672e-03,
+        """1.09645610e-01, -7.87597025e-03, -7.15833841e-02,
+        -1.56913052e-01, -5.81748298e-02, -3.13173766e-02,
+        1.28799333e-01, 1.67345310e-01, 3.99372996e-02,
+        6.47547895e-03, 1.59949915e-01, 1.28237293e-02,
+        4.82290336e-02, 1.71777271e-01, 1.01490122e-01,
+        -1.42509860e-01, 3.49457867e-02, -7.98890110e-02,
+        1.17229625e-01, 9.87729597e-01]"""
+
         # Reset the parameters to estimate the initial translation of the
         # body model
-        body_model.reset_params(body_pose=body_mean_pose)
+        body_model.reset_params(body_pose=body_mean_pose, betas=zebra_betas)
+
+
+
+
+        with torch.no_grad():
+            body_model.betas[:] = torch.Tensor([zebra_betas])
+            #body_model.betas[21:] = torch.Tensor([0.0]*21)
+
+
 
         # If the distance between the 2D shoulders is smaller than a
         # predefined threshold then try 2 fits, the initial one and a 180
         # degree rotation
-        shoulder_dist = torch.dist(gt_joints[:, left_shoulder_idx],
-                                   gt_joints[:, right_shoulder_idx])
-        try_both_orient = shoulder_dist.item() < side_view_thsh
+        #shoulder_dist = torch.dist(gt_joints[:, left_shoulder_idx],
+        #                           gt_joints[:, right_shoulder_idx])
+        
+        # °°°°°°
+        try_both_orient = False
+        #try_both_orient = shoulder_dist.item() < side_view_thsh
+
+
+
+
+
 
         # Update the value of the translation of the camera as well as
         # the image center.
         with torch.no_grad():
             camera.translation[:] = init_t.view_as(camera.translation)
-            camera.center[:] = torch.tensor([W, H], dtype=dtype) * 0.5
+            #camera.center[:] = torch.tensor([W, H], dtype=dtype) * 0.5
+            camera.center[:] = torch.Tensor([240, 160])
 
         # Re-enable gradient calculation for the camera translation
         camera.translation.requires_grad = True
@@ -345,7 +397,7 @@ def fit_single_frame(img,
             camera_loss, create_graph=camera_create_graph,
             use_vposer=use_vposer, vposer=vposer,
             pose_embedding=pose_embedding,
-            return_full_pose=False, return_verts=False)
+            return_full_pose=False, return_verts=True)
 
         # Step 1: Optimize over the torso joints the camera translation
         # Initialize the computational graph by feeding the initial translation
@@ -358,6 +410,24 @@ def fit_single_frame(img,
                                                 pose_embedding=pose_embedding,
                                                 vposer=vposer)
 
+
+
+
+        # °°°°°°°°°
+        forced_camera_translation = torch.Tensor([0.05380275, -0.23544808,  7.48446028])
+        forced_model_orient = torch.Tensor([1.52352594, 0.29095589, -0.06503418]) # forced_model_orient and forced_camera_translation need to be verified
+        with torch.no_grad():
+            camera.translation[:] = forced_camera_translation.view_as(camera.translation)
+            body_model.global_orient[:] = forced_model_orient.view_as(body_model.global_orient)
+
+
+
+        #model_output = body_model(return_verts=True,body_pose=None)
+        #vertices = model_output.vertices.detach().cpu().numpy()
+        #monitor.mv.update_mesh(vertices.squeeze(),body_model.faces)
+
+
+
         if interactive:
             if use_cuda and torch.cuda.is_available():
                 torch.cuda.synchronize()
@@ -369,7 +439,15 @@ def fit_single_frame(img,
         # If the 2D detections/positions of the shoulder joints are too
         # close the rotate the body by 180 degrees and also fit to that
         # orientation
-        if try_both_orient:
+
+
+
+
+
+
+
+
+        '''if False: # °°°°°°°°try_both_orient:
             body_orient = body_model.global_orient.detach().cpu().numpy()
             flipped_orient = cv2.Rodrigues(body_orient)[0].dot(
                 cv2.Rodrigues(np.array([0., np.pi, 0]))[0])
@@ -379,8 +457,8 @@ def fit_single_frame(img,
                                           dtype=dtype,
                                           device=device).unsqueeze(dim=0)
             orientations = [body_orient, flipped_orient]
-        else:
-            orientations = [body_model.global_orient.detach().cpu().numpy()]
+        else:'''
+        orientations = [body_model.global_orient.detach().cpu().numpy()]
 
         # store here the final error for both orientations,
         # and pick the orientation resulting in the lowest error
@@ -392,7 +470,12 @@ def fit_single_frame(img,
             opt_start = time.time()
 
             new_params = defaultdict(global_orient=orient,
-                                     body_pose=body_mean_pose)
+                                     body_pose=body_mean_pose,
+                                     betas=zebra_betas)
+
+            for name, param in body_model.named_parameters():
+                print('\n\n', name,param,'\n\n')
+
             body_model.reset_params(**new_params)
             if use_vposer:
                 with torch.no_grad():
@@ -416,10 +499,10 @@ def fit_single_frame(img,
                 curr_weights['data_weight'] = data_weight
                 curr_weights['bending_prior_weight'] = (
                     3.17 * curr_weights['body_pose_weight'])
-                if use_hands:
+                '''if use_hands:
                     joint_weights[:, 25:67] = curr_weights['hand_weight']
                 if use_face:
-                    joint_weights[:, 67:] = curr_weights['face_weight']
+                    joint_weights[:, 67:] = curr_weights['face_weight']'''
                 loss.reset_loss_weights(curr_weights)
 
                 closure = monitor.create_fitting_closure(
@@ -436,6 +519,7 @@ def fit_single_frame(img,
                     if use_cuda and torch.cuda.is_available():
                         torch.cuda.synchronize()
                     stage_start = time.time()
+
                 final_loss_val = monitor.run_fitting(
                     body_optimizer,
                     closure, final_params,
@@ -483,9 +567,10 @@ def fit_single_frame(img,
             pickle.dump(results[min_idx]['result'], result_file, protocol=2)
 
     if save_meshes or visualize:
-        body_pose = vposer.decode(
-            pose_embedding,
-            output_type='aa').view(1, -1) if use_vposer else None
+        #body_pose = vposer.decode(
+        #    pose_embedding,
+        #    output_type='aa').view(1, -1) if use_vposer else None
+        body_pose = (vposer.decode(pose_embedding).get( 'pose_body')).reshape(1, -1) if use_vposer else None
 
         model_type = kwargs.get('model_type', 'smpl')
         append_wrists = model_type == 'smpl' and use_vposer
@@ -497,6 +582,8 @@ def fit_single_frame(img,
 
         model_output = body_model(return_verts=True, body_pose=body_pose)
         vertices = model_output.vertices.detach().cpu().numpy().squeeze()
+
+        print(camera(model_output.joints))
 
         import trimesh
 
@@ -546,10 +633,19 @@ def fit_single_frame(img,
         color, _ = r.render(scene, flags=pyrender.RenderFlags.RGBA)
         color = color.astype(np.float32) / 255.0
 
+        # heresy, delete
+        color = color[:320, :480, :]
+
         valid_mask = (color[:, :, -1] > 0)[:, :, np.newaxis]
         input_img = img.detach().cpu().numpy()
+
+        # heresy, delete
+        input_img = cv2.resize(input_img, dsize=(480, 320), interpolation=cv2.INTER_CUBIC)
+
         output_img = (color[:, :, :-1] * valid_mask +
                       (1 - valid_mask) * input_img)
+
+
 
         img = pil_img.fromarray((output_img * 255).astype(np.uint8))
         img.save(out_img_fn)

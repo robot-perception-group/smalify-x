@@ -114,4 +114,7 @@ class PerspectiveCamera(nn.Module):
                                projected_points[:, :, 2].unsqueeze(dim=-1))
         img_points = torch.einsum('bki,bji->bjk', [camera_mat, img_points]) \
             + self.center.unsqueeze(dim=1)
+
+
+        #print('°°°°° \n camera_mat \n', camera_mat, '\n camera_transform \n', camera_transform, '\n homog_coord \n', homog_coord, '\n points_h \n', points_h, '\n projected_points \n', projected_points, '\n img_points \n' ,img_points, '\n')
         return img_points

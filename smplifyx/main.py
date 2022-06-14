@@ -42,6 +42,11 @@ torch.backends.cudnn.enabled = False
 
 
 def main(**args):
+    print(args)
+
+    for el in args:
+        print('°°°°°^ ', el,':', args[el])
+
     output_folder = args.pop('output_folder')
     output_folder = osp.expandvars(output_folder)
     if not osp.exists(output_folder):
@@ -99,8 +104,28 @@ def main(**args):
 
     joint_mapper = JointMapper(dataset_obj.get_model2data())
 
+
+    #°°°°°°°°
+    zebra_betas = [4.01370676e-01, 1.23658677e+00, -8.94257279e-01,
+             3.19973349e-01, 7.19024035e-01, -1.05410595e-01,
+             3.99230129e-01, 1.58862240e-01, 3.85614217e-01,
+             -8.16620447e-02, 1.46995142e-01, -2.31515581e-01,
+             -3.10253925e-01, -3.42558453e-01, -2.16503877e-01,
+             4.97941459e-02, 8.76565450e-03, 1.12414110e-01,
+             9.20290504e-02, 5.10690930e-02]
+    ''', 7.17257672e-03,
+         1.09645610e-01, -7.87597025e-03, -7.15833841e-02,
+         -1.56913052e-01, -5.81748298e-02, -3.13173766e-02,
+         1.28799333e-01, 1.67345310e-01, 3.99372996e-02,
+         6.47547895e-03, 1.59949915e-01, 1.28237293e-02,
+         4.82290336e-02, 1.71777271e-01, 1.01490122e-01,
+         -1.42509860e-01, 3.49457867e-02, -7.98890110e-02,
+         1.17229625e-01, 9.87729597e-01]'''
+
+
+
     model_params = dict(model_path=args.get('model_folder'),
-                        joint_mapper=joint_mapper,
+                        joint_mapper=None, #°°°°°°joint_mapper,
                         create_global_orient=True,
                         create_body_pose=not args.get('use_vposer'),
                         create_betas=True,
@@ -112,6 +137,8 @@ def main(**args):
                         create_reye_pose=True,
                         create_transl=False,
                         dtype=dtype,
+                        betas=torch.Tensor([zebra_betas]),
+                        num_betas=20,
                         **args)
 
     male_model = smplx.create(gender='male', **model_params)
@@ -167,7 +194,7 @@ def main(**args):
             **rhand_args)
 
     shape_prior = create_prior(
-        prior_type=args.get('shape_prior_type', 'l2'),
+        prior_type=args.get('shape_prior_type', 'mahalanobis_shape'),
         dtype=dtype, **args)
 
     angle_prior = create_prior(prior_type='angle', dtype=dtype)
@@ -233,12 +260,19 @@ def main(**args):
             else:
                 gender = input_gender
 
+            #print('°°°°°°', gender)
+
             if gender == 'neutral':
                 body_model = neutral_model
             elif gender == 'female':
                 body_model = female_model
             elif gender == 'male':
                 body_model = male_model
+
+            #from animal_shape_prior import MultiShapePrior
+            #shape_prior = MultiShapePrior(family_name='horse', data_name='smplifyx/smal_data_00781_4_all.pkl')
+            #body_model.betas[:] = shape_prior.mu
+            #body_model.betas[:] = torch.from_numpy(shape_prior.mu).to(device)
 
             out_img_fn = osp.join(curr_img_folder, 'output.png')
 
