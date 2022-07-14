@@ -229,7 +229,7 @@ def parse_config(argv=None):
                         help='The weights of the pose regularizer of the' +
                         ' hands')
     parser.add_argument('--coll_loss_weights',
-                        default=[0.0, 0.0, 0.0, 2.0], type=float,
+                        default=None, type=float,
                         nargs='*',
                         help='The weight for the collision term')
 

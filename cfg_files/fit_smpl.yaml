@@ -71,27 +71,31 @@ optim_type: 'lbfgs'
 #optim_type: 'lbfgsls'
 ftol: 1e-9
 gtol: 1e-9
-lr: 1.0
+lr: 0.1 # °°°°°° 1.0
 # Max number of optimization iterations
-maxiters: 10 #°°°°°° 30
+maxiters: 15 #°°°°°° 30
 interactive: True
 visualize: False
 
 data_weights:
     - 1.5e3
-    - 1.5e3
-    - 1.5e3
-    - 1.5e3
+#    - 1.5e3
+#    - 1.5e3
+#    - 1.5e3
 body_pose_prior_weights:
     - 2.0e4
-    - 1.6e4
-    - 1.0e4
-    - 0.98e4
+#    - 1.6e4
+#    - 1.0e4
+#    - 0.98e4
 shape_weights:
+#    - 1e2
+#    - .9e2
+#    - .7e2
+#    - .6e2
     - 1e4
-    - .9e4
-    - .7e4
-    - .6e4
+#    - .9e4
+#    - .7e4
+#    - .6e4
 
 use_vposer: False
 vposer_ckpt: "vposer"

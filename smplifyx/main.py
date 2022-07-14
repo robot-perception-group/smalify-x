@@ -30,6 +30,8 @@ import torch
 
 import smplx
 
+import cv2
+
 from utils import JointMapper
 from cmd_parser import parse_config
 from data_parser import create_dataset
@@ -113,15 +115,6 @@ def main(**args):
              -3.10253925e-01, -3.42558453e-01, -2.16503877e-01,
              4.97941459e-02, 8.76565450e-03, 1.12414110e-01,
              9.20290504e-02, 5.10690930e-02]
-    ''', 7.17257672e-03,
-         1.09645610e-01, -7.87597025e-03, -7.15833841e-02,
-         -1.56913052e-01, -5.81748298e-02, -3.13173766e-02,
-         1.28799333e-01, 1.67345310e-01, 3.99372996e-02,
-         6.47547895e-03, 1.59949915e-01, 1.28237293e-02,
-         4.82290336e-02, 1.71777271e-01, 1.01490122e-01,
-         -1.42509860e-01, 3.49457867e-02, -7.98890110e-02,
-         1.17229625e-01, 9.87729597e-01]'''
-
 
 
     model_params = dict(model_path=args.get('model_folder'),
@@ -230,6 +223,16 @@ def main(**args):
         img = data['img']
         fn = data['fn']
         keypoints = data['keypoints']
+
+        #img_scaled_w = 1280
+        img_scaled_w = 1280
+
+        img_scaling_factor = img.shape[1] / img_scaled_w
+        img_scaled_h = round(img.shape[0] / img_scaling_factor)
+        img = cv2.resize(img, dsize=(img_scaled_w, img_scaled_h), interpolation=cv2.INTER_CUBIC)
+        keypoints[0][:,:2] = keypoints[0][:,:2] / img_scaling_factor
+
+
         print('Processing: {}'.format(data['img_path']))
 
         curr_result_folder = osp.join(result_folder, fn)
