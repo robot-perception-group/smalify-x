@@ -44,11 +44,6 @@ torch.backends.cudnn.enabled = False
 
 
 def main(**args):
-    print(args)
-
-    for el in args:
-        print('°°°°°^ ', el,':', args[el])
-
     output_folder = args.pop('output_folder')
     output_folder = osp.expandvars(output_folder)
     if not osp.exists(output_folder):
@@ -92,8 +87,6 @@ def main(**args):
 
     start = time.time()
 
-    input_gender = args.pop('gender', 'neutral')
-    gender_lbl_type = args.pop('gender_lbl_type', 'none')
     max_persons = args.pop('max_persons', -1)
 
     float_dtype = args.get('float_dtype', 'float32')
@@ -104,10 +97,6 @@ def main(**args):
     else:
         raise ValueError('Unknown float type {}, exiting!'.format(float_dtype))
 
-    joint_mapper = JointMapper(dataset_obj.get_model2data())
-
-
-    #°°°°°°°°
     zebra_betas = [4.01370676e-01, 1.23658677e+00, -8.94257279e-01,
              3.19973349e-01, 7.19024035e-01, -1.05410595e-01,
              3.99230129e-01, 1.58862240e-01, 3.85614217e-01,
@@ -116,31 +105,17 @@ def main(**args):
              4.97941459e-02, 8.76565450e-03, 1.12414110e-01,
              9.20290504e-02, 5.10690930e-02]
 
-
     model_params = dict(model_path=args.get('model_folder'),
-                        joint_mapper=None, #°°°°°°joint_mapper,
                         create_global_orient=True,
                         create_body_pose=not args.get('use_vposer'),
                         create_betas=True,
-                        create_left_hand_pose=True,
-                        create_right_hand_pose=True,
-                        create_expression=True,
-                        create_jaw_pose=True,
-                        create_leye_pose=True,
-                        create_reye_pose=True,
                         create_transl=False,
                         dtype=dtype,
                         betas=torch.Tensor([zebra_betas]),
                         num_betas=20,
                         **args)
+    body_model = smplx.create(**model_params)
 
-    male_model = smplx.create(gender='male', **model_params)
-    # SMPL-H has no gender-neutral model
-    if args.get('model_type') != 'smplh':
-        neutral_model = smplx.create(gender='neutral', **model_params)
-    female_model = smplx.create(gender='female', **model_params)
-
-    # Create the camera object
     focal_length = args.get('focal_length')
     camera = create_camera(focal_length_x=focal_length,
                            focal_length_y=focal_length,
@@ -150,41 +125,10 @@ def main(**args):
     if hasattr(camera, 'rotation'):
         camera.rotation.requires_grad = False
 
-    use_hands = args.get('use_hands', True)
-    use_face = args.get('use_face', True)
-
     body_pose_prior = create_prior(
         prior_type=args.get('body_prior_type'),
         dtype=dtype,
         **args)
-
-    jaw_prior, expr_prior = None, None
-    if use_face:
-        jaw_prior = create_prior(
-            prior_type=args.get('jaw_prior_type'),
-            dtype=dtype,
-            **args)
-        expr_prior = create_prior(
-            prior_type=args.get('expr_prior_type', 'l2'),
-            dtype=dtype, **args)
-
-    left_hand_prior, right_hand_prior = None, None
-    if use_hands:
-        lhand_args = args.copy()
-        lhand_args['num_gaussians'] = args.get('num_pca_comps')
-        left_hand_prior = create_prior(
-            prior_type=args.get('left_hand_prior_type'),
-            dtype=dtype,
-            use_left_hand=True,
-            **lhand_args)
-
-        rhand_args = args.copy()
-        rhand_args['num_gaussians'] = args.get('num_pca_comps')
-        right_hand_prior = create_prior(
-            prior_type=args.get('right_hand_prior_type'),
-            dtype=dtype,
-            use_right_hand=True,
-            **rhand_args)
 
     shape_prior = create_prior(
         prior_type=args.get('shape_prior_type', 'mahalanobis_shape'),
@@ -194,46 +138,23 @@ def main(**args):
 
     if use_cuda and torch.cuda.is_available():
         device = torch.device('cuda')
-
         camera = camera.to(device=device)
-        female_model = female_model.to(device=device)
-        male_model = male_model.to(device=device)
-        if args.get('model_type') != 'smplh':
-            neutral_model = neutral_model.to(device=device)
+        body_model = body_model.to(device=device)
         body_pose_prior = body_pose_prior.to(device=device)
         angle_prior = angle_prior.to(device=device)
         shape_prior = shape_prior.to(device=device)
-        if use_face:
-            expr_prior = expr_prior.to(device=device)
-            jaw_prior = jaw_prior.to(device=device)
-        if use_hands:
-            left_hand_prior = left_hand_prior.to(device=device)
-            right_hand_prior = right_hand_prior.to(device=device)
-    else:
-        device = torch.device('cpu')
-
-    # A weight for every joint of the model
-    joint_weights = dataset_obj.get_joint_weights().to(device=device,
-                                                       dtype=dtype)
-    # Add a fake batch dimension for broadcasting
-    joint_weights.unsqueeze_(dim=0)
 
     for idx, data in enumerate(dataset_obj):
-
-        img = data['img']
-        fn = data['fn']
-        keypoints = data['keypoints']
-
-        #img_scaled_w = 1280
+        img = data['img'][0]
+        fn = data['fn'][0]
+        keypoints = data['keypoints'][0]
         img_scaled_w = 1280
-
         img_scaling_factor = img.shape[1] / img_scaled_w
         img_scaled_h = round(img.shape[0] / img_scaling_factor)
         img = cv2.resize(img, dsize=(img_scaled_w, img_scaled_h), interpolation=cv2.INTER_CUBIC)
         keypoints[0][:,:2] = keypoints[0][:,:2] / img_scaling_factor
 
-
-        print('Processing: {}'.format(data['img_path']))
+        print('Processing: {}'.format(data['img_path'][0]))
 
         curr_result_folder = osp.join(result_folder, fn)
         if not osp.exists(curr_result_folder):
@@ -244,45 +165,16 @@ def main(**args):
         for person_id in range(keypoints.shape[0]):
             if person_id >= max_persons and max_persons > 0:
                 continue
-
-            curr_result_fn = osp.join(curr_result_folder,
-                                      '{:03d}.pkl'.format(person_id))
-            curr_mesh_fn = osp.join(curr_mesh_folder,
-                                    '{:03d}.obj'.format(person_id))
-
-            curr_img_folder = osp.join(output_folder, 'images', fn,
-                                       '{:03d}'.format(person_id))
+            curr_result_fn = osp.join(curr_result_folder,'{:03d}.pkl'.format(person_id))
+            curr_mesh_fn = osp.join(curr_mesh_folder,'{:03d}.obj'.format(person_id))
+            curr_img_folder = osp.join(output_folder, 'images', fn,'{:03d}'.format(person_id))
             if not osp.exists(curr_img_folder):
                 os.makedirs(curr_img_folder)
-
-            if gender_lbl_type != 'none':
-                if gender_lbl_type == 'pd' and 'gender_pd' in data:
-                    gender = data['gender_pd'][person_id]
-                if gender_lbl_type == 'gt' and 'gender_gt' in data:
-                    gender = data['gender_gt'][person_id]
-            else:
-                gender = input_gender
-
-            #print('°°°°°°', gender)
-
-            if gender == 'neutral':
-                body_model = neutral_model
-            elif gender == 'female':
-                body_model = female_model
-            elif gender == 'male':
-                body_model = male_model
-
-            #from animal_shape_prior import MultiShapePrior
-            #shape_prior = MultiShapePrior(family_name='horse', data_name='smplifyx/smal_data_00781_4_all.pkl')
-            #body_model.betas[:] = shape_prior.mu
-            #body_model.betas[:] = torch.from_numpy(shape_prior.mu).to(device)
-
             out_img_fn = osp.join(curr_img_folder, 'output.png')
 
             fit_single_frame(img, keypoints[[person_id]],
                              body_model=body_model,
                              camera=camera,
-                             joint_weights=joint_weights,
                              dtype=dtype,
                              output_folder=output_folder,
                              result_folder=curr_result_folder,
@@ -290,19 +182,12 @@ def main(**args):
                              result_fn=curr_result_fn,
                              mesh_fn=curr_mesh_fn,
                              shape_prior=shape_prior,
-                             expr_prior=expr_prior,
                              body_pose_prior=body_pose_prior,
-                             left_hand_prior=left_hand_prior,
-                             right_hand_prior=right_hand_prior,
-                             jaw_prior=jaw_prior,
                              angle_prior=angle_prior,
                              **args)
-
     elapsed = time.time() - start
-    time_msg = time.strftime('%H hours, %M minutes, %S seconds',
-                             time.gmtime(elapsed))
+    time_msg = time.strftime('%H hours, %M minutes, %S seconds',time.gmtime(elapsed))
     print('Processing the data took: {}'.format(time_msg))
-
 
 if __name__ == "__main__":
     args = parse_config()

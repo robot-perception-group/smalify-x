@@ -45,6 +45,8 @@ Keypoints.__new__.__defaults__ = (None,) * len(Keypoints._fields)
 def create_dataset(dataset='openpose', data_folder='data', **kwargs):
     if dataset.lower() == 'openpose':
         return OpenPose(data_folder, **kwargs)
+    elif dataset.lower() == 'animal':
+        return AnimalData(data_folder)
     else:
         raise ValueError('Unknown dataset: {}'.format(dataset))
 
@@ -213,4 +215,57 @@ class OpenPose(Dataset):
         img_path = self.img_paths[self.cnt]
         self.cnt += 1
 
+        return self.read_item(img_path)
+
+
+
+
+
+class AnimalData(Dataset):
+    def __init__(self, data_folder, img_folder='images',
+                 keyp_folder='keypoints',
+                 dtype=torch.float32,
+                 model_type='smplx'):
+        super(AnimalData, self).__init__()
+        self.model_type = model_type
+        self.dtype = dtype
+        self.img_folder = osp.join(data_folder, img_folder)
+        self.keyp_folder = osp.join(data_folder, keyp_folder)
+        self.img_paths = [osp.join(self.img_folder, img_fn)
+                          for img_fn in os.listdir(self.img_folder)
+                          if img_fn.endswith('.png') or
+                          img_fn.endswith('.jpg') and
+                          not img_fn.startswith('.')]
+        self.img_paths = sorted(self.img_paths)
+        self.cnt = 0
+
+    def __len__(self):
+        return len(self.img_paths)
+
+    def __getitem__(self, idx):
+        img_path = self.img_paths[idx]
+        return self.read_item(img_path)
+
+    def read_item(self, img_path):
+        img = cv2.imread(img_path).astype(np.float32)[:, :, ::-1] / 255.0
+        img_fn, _ = osp.splitext(osp.split(img_path)[1])
+        keypoint_fn = osp.join(self.keyp_folder,img_fn + '_keypoints.json')
+        keyp_tuple = read_keypoints(keypoint_fn)
+        if len(keyp_tuple.keypoints) < 1:
+            return {}
+        keypoints = np.stack(keyp_tuple.keypoints)
+        output_dict = {'fn': [img_fn],
+                       'img_path': [img_path],
+                       'keypoints': [keypoints],
+                       'img': [img]}
+        return output_dict
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.cnt >= len(self.img_paths):
+            raise StopIteration
+        img_path = self.img_paths[self.cnt]
+        self.cnt += 1
         return self.read_item(img_path)
