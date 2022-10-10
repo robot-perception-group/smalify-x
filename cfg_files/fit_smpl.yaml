@@ -1,13 +1,13 @@
 dataset: 'animal'
 data_folder: "data"
-output_folder: 'smpl_debug'
+#output_folder: 'output'
 prior_folder: 'priors'
-model_folder: 'models'
-result_folder: 'results'
+model_folder: '/home/frg08/Code/smplify-x/smpl/models/SMAL.pkl'
+#result_folder: 'output/results'
+#mesh_folder: 'output/meshes'
 model_type: 'smpl'
-# Flag for using the GPU
 use_cuda: False
-float_dtype: "float32"
+#float_dtype: 'torch.float32'
 use_joints_conf: True
 use_pca: True
 use_hands: False
@@ -22,7 +22,7 @@ right_hand_prior_type: l2
 focal_length: 1000 # °°°°°°° was 5000
 num_pca_comps: 12
 # The constant for the robust loss function
-rho: 100
+rho: 150
 interpenetration: False
 df_cone_height: 0.0001
 # Upper arms and Spine 2
@@ -39,7 +39,7 @@ lr: 0.1 # °°°°°° 1.0
 # Max number of optimization iterations
 maxiters: 15 #°°°°°° 30
 interactive: True
-visualize: False
+visualize: True
 
 data_weights:
     - 1.5e3
@@ -62,4 +62,12 @@ shape_weights:
 #    - .6e4
 
 use_vposer: False
-vposer_ckpt: "vposer"
+vposer_ckpt: "/home/frg08/Code/smplify-x/V02_05/"
+zebra_betas: [4.01370676e-01, 1.23658677e+00, -8.94257279e-01,
+             3.19973349e-01, 7.19024035e-01, -1.05410595e-01,
+             3.99230129e-01, 1.58862240e-01, 3.85614217e-01,
+             -8.16620447e-02, 1.46995142e-01, -2.31515581e-01,
+             -3.10253925e-01, -3.42558453e-01, -2.16503877e-01,
+             4.97941459e-02, 8.76565450e-03, 1.12414110e-01,
+             9.20290504e-02, 5.10690930e-02]
+num_betas: 20

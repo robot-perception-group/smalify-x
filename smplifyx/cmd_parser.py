@@ -20,8 +20,8 @@ from __future__ import division
 
 import sys
 import os
-
 import configargparse
+import torch
 
 
 def parse_config(argv=None):
@@ -69,21 +69,21 @@ def parse_config(argv=None):
     parser.add_argument('--joints_to_ign', default=-1, type=int,
                         nargs='*',
                         help='Indices of joints to be ignored')
-    parser.add_argument('--output_folder',
+    '''parser.add_argument('--output_folder',
                         default='output',
                         type=str,
-                        help='The folder where the output is stored')
+                        help='The folder where the output is stored')'''
     parser.add_argument('--img_folder', type=str, default='images',
                         help='The folder where the images are stored')
     parser.add_argument('--keyp_folder', type=str, default='keypoints',
                         help='The folder where the keypoints are stored')
     parser.add_argument('--summary_folder', type=str, default='summaries',
                         help='Where to store the TensorBoard summaries')
-    parser.add_argument('--result_folder', type=str, default='results',
+    '''parser.add_argument('--result_folder', type=str, default='results',
                         help='The folder with the pkls of the output' +
                         ' parameters')
     parser.add_argument('--mesh_folder', type=str, default='meshes',
-                        help='The folder where the output meshes are stored')
+                        help='The folder where the output meshes are stored')'''
     parser.add_argument('--gender_lbl_type', default='none',
                         choices=['none', 'gt', 'pd'], type=str,
                         help='The type of gender label to use')
@@ -92,7 +92,7 @@ def parse_config(argv=None):
                         choices=['neutral', 'male', 'female'],
                         help='Use gender neutral or gender specific SMPL' +
                         'model')
-    parser.add_argument('--float_dtype', type=str, default='float32',
+    parser.add_argument('--dtype', type=torch.dtype, default=torch.float32,
                         help='The types of floats used')
     parser.add_argument('--model_type', default='smpl', type=str,
                         choices=['smpl', 'smplh', 'smplx'],
@@ -133,6 +133,8 @@ def parse_config(argv=None):
                         help='Use the low dimensional PCA space for the hands')
     parser.add_argument('--num_pca_comps', default=6, type=int,
                         help='The number of PCA components for the hand.')
+    parser.add_argument('--num_betas', default=20, type=int,
+                        help='Number of shape parameters.')
     parser.add_argument('--flat_hand_mean', default=False,
                         type=lambda arg: arg.lower() in ['true', '1'],
                         help='Use the flat hand as the mean pose')
@@ -251,6 +253,9 @@ def parse_config(argv=None):
     parser.add_argument('--ign_part_pairs', default=None,
                         nargs='*', type=str,
                         help='Pairs of parts whose collisions will be ignored')
+    parser.add_argument('--zebra_betas', default=None,
+                        nargs='*', type=str,
+                        help='Animal shape parameters')
     parser.add_argument('--use_hands', default=False,
                         type=lambda x: x.lower() in ['true', '1'],
                         help='Use the hand keypoints in the SMPL' +

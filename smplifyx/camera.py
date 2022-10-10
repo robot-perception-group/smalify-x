@@ -27,6 +27,8 @@ import torch.nn as nn
 from smplx.lbs import transform_mat
 
 
+from smplx.lbs import batch_rodrigues
+
 PerspParams = namedtuple('ModelOutput',
                          ['rotation', 'translation', 'center',
                           'focal_length'])
@@ -76,12 +78,30 @@ class PerspectiveCamera(nn.Module):
             center = torch.zeros([batch_size, 2], dtype=dtype)
         self.register_buffer('center', center)
 
-        if rotation is None:
+
+
+
+        rotation_aa = torch.Tensor([0,0,0])
+        rotation_aa = nn.Parameter(rotation_aa, requires_grad=True)
+        self.register_parameter('rotation_aa', rotation_aa)
+
+        rotation = batch_rodrigues(torch.unsqueeze(rotation_aa, 0))
+        self.register_buffer('rotation', rotation)
+
+
+
+
+        '''if rotation is None:
             rotation = torch.eye(
                 3, dtype=dtype).unsqueeze(dim=0).repeat(batch_size, 1, 1)
 
         rotation = nn.Parameter(rotation, requires_grad=True)
-        self.register_parameter('rotation', rotation)
+        self.register_parameter('rotation', rotation)'''
+
+
+
+
+
 
         if translation is None:
             translation = torch.zeros([batch_size, 3], dtype=dtype)
@@ -91,6 +111,8 @@ class PerspectiveCamera(nn.Module):
         self.register_parameter('translation', translation)
 
     def forward(self, points):
+        self.rotation = batch_rodrigues(torch.unsqueeze(self.rotation_aa, 0))
+
         device = points.device
 
         with torch.no_grad():
