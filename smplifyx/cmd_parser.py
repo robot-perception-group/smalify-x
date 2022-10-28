@@ -235,7 +235,7 @@ def parse_config(argv=None):
                         nargs='*',
                         help='The weight for the collision term')
 
-    parser.add_argument('--depth_loss_weight', default=1e2, type=float,
+    parser.add_argument('--depth_loss_weight', default=0, type=float,
                         help='The weight for the regularizer for the' +
                         ' z coordinate of the camera translation')
     parser.add_argument('--df_cone_height', default=0.5, type=float,

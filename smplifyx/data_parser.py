@@ -102,123 +102,6 @@ def read_keypoints(keypoint_fn, use_hands=True, use_face=True,
                      gender_gt=gender_gt)
 
 
-class OpenPose(Dataset):
-
-    NUM_BODY_JOINTS = 33#°°°°°°°°°°25
-    NUM_HAND_JOINTS = 20
-
-    def __init__(self, data_folder, img_folder='images',
-                 keyp_folder='keypoints',
-                 use_hands=False,
-                 use_face=False,
-                 dtype=torch.float32,
-                 model_type='smplx',
-                 joints_to_ign=None,
-                 use_face_contour=False,
-                 openpose_format='coco25',
-                 **kwargs):
-        super(OpenPose, self).__init__()
-
-        self.use_hands = use_hands
-        self.use_face = use_face
-        self.model_type = model_type
-        self.dtype = dtype
-        self.joints_to_ign = joints_to_ign
-        self.use_face_contour = use_face_contour
-
-        self.openpose_format = openpose_format
-
-        self.num_joints = (self.NUM_BODY_JOINTS +
-                           2 * self.NUM_HAND_JOINTS * use_hands)
-
-        self.img_folder = osp.join(data_folder, img_folder)
-        self.keyp_folder = osp.join(data_folder, keyp_folder)
-
-        self.img_paths = [osp.join(self.img_folder, img_fn)
-                          for img_fn in os.listdir(self.img_folder)
-                          if img_fn.endswith('.png') or
-                          img_fn.endswith('.jpg') and
-                          not img_fn.startswith('.')]
-        self.img_paths = sorted(self.img_paths)
-        self.cnt = 0
-
-    def get_model2data(self):
-        return smpl_to_openpose(self.model_type, use_hands=self.use_hands,
-                                use_face=self.use_face,
-                                use_face_contour=self.use_face_contour,
-                                openpose_format=self.openpose_format)
-
-    def get_left_shoulder(self):
-        return 2
-
-    def get_right_shoulder(self):
-        return 5
-
-    def get_joint_weights(self):
-        # The weights for the joint terms in the optimization
-        optim_weights = np.ones(self.num_joints + 2 * self.use_hands +
-                                self.use_face * 51 +
-                                17 * self.use_face_contour,
-                                dtype=np.float32)
-
-        # Neck, Left and right hip
-        # These joints are ignored because SMPL has no neck joint and the
-        # annotation of the hips is ambiguous.
-        if self.joints_to_ign is not None and -1 not in self.joints_to_ign:
-            optim_weights[self.joints_to_ign] = 0.
-        print('°°°°° optim_weights', optim_weights)
-        return torch.tensor(optim_weights, dtype=self.dtype)
-
-    def __len__(self):
-        return len(self.img_paths)
-
-    def __getitem__(self, idx):
-        img_path = self.img_paths[idx]
-        return self.read_item(img_path)
-
-    def read_item(self, img_path):
-        img = cv2.imread(img_path).astype(np.float32)[:, :, ::-1] / 255.0
-        img_fn = osp.split(img_path)[1]
-        img_fn, _ = osp.splitext(osp.split(img_path)[1])
-
-        keypoint_fn = osp.join(self.keyp_folder,
-                               img_fn + '_keypoints.json')
-        keyp_tuple = read_keypoints(keypoint_fn, use_hands=self.use_hands,
-                                    use_face=self.use_face,
-                                    use_face_contour=self.use_face_contour)
-
-        if len(keyp_tuple.keypoints) < 1:
-            return {}
-        keypoints = np.stack(keyp_tuple.keypoints)
-
-        output_dict = {'fn': img_fn,
-                       'img_path': img_path,
-                       'keypoints': keypoints, 'img': img}
-        if keyp_tuple.gender_gt is not None:
-            if len(keyp_tuple.gender_gt) > 0:
-                output_dict['gender_gt'] = keyp_tuple.gender_gt
-        if keyp_tuple.gender_pd is not None:
-            if len(keyp_tuple.gender_pd) > 0:
-                output_dict['gender_pd'] = keyp_tuple.gender_pd
-        return output_dict
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        return self.next()
-
-    def next(self):
-        if self.cnt >= len(self.img_paths):
-            raise StopIteration
-
-        img_path = self.img_paths[self.cnt]
-        self.cnt += 1
-
-        return self.read_item(img_path)
-
-
-
 
 
 class AnimalData(Dataset):
@@ -231,41 +114,55 @@ class AnimalData(Dataset):
         self.dtype = dtype
         self.img_folder = osp.join(data_folder, img_folder)
         self.keyp_folder = osp.join(data_folder, keyp_folder)
-        self.img_paths = [osp.join(self.img_folder, img_fn)
+        self.img_dir_paths = [osp.join(self.img_folder, img_fn)
                           for img_fn in os.listdir(self.img_folder)
-                          if img_fn.endswith('.png') or
-                          img_fn.endswith('.jpg') and
-                          not img_fn.startswith('.')]
-        self.img_paths = sorted(self.img_paths)
+                          if not img_fn.startswith('.')]
+        self.img_dir_paths = sorted(self.img_dir_paths)
         self.cnt = 0
 
     def __len__(self):
-        return len(self.img_paths)
+        return len(self.img_dir_paths)
 
     def __getitem__(self, idx):
-        img_path = self.img_paths[idx]
-        return self.read_item(img_path)
+        img_dir_path = self.img_dir_paths[idx]
+        return self.read_item(img_dir_path)
 
-    def read_item(self, img_path):
-        img = cv2.imread(img_path).astype(np.float32)[:, :, ::-1] / 255.0
-        img_fn, _ = osp.splitext(osp.split(img_path)[1])
-        keypoint_fn = osp.join(self.keyp_folder,img_fn + '_keypoints.json')
-        keyp_tuple = read_keypoints(keypoint_fn)
-        if len(keyp_tuple.keypoints) < 1:
-            return {}
-        keypoints = np.stack(keyp_tuple.keypoints)
-        output_dict = {'fn': [img_fn],
-                       'img_path': [img_path],
+    def read_item(self, img_dir_path):
+        img_paths = [osp.join(img_dir_path, img_fn)
+                     for img_fn in os.listdir(img_dir_path)
+                     if img_fn.endswith('.png') or
+                     img_fn.endswith('.jpg') and not img_fn.startswith('.')]
+
+        img_fns = []
+        keypoints = []
+        imgs = []
+
+        for img_path in img_paths:
+
+            img = cv2.imread(img_path).astype(np.float32)[:, :, ::-1] / 255.0
+            img_fn, _ = osp.splitext(osp.split(img_path)[1])
+            snapshot_name = osp.split(img_dir_path)[-1]
+            keypoint_fn = osp.join(self.keyp_folder,snapshot_name,img_fn + '_keypoints.json')
+            keyp_tuple = read_keypoints(keypoint_fn)
+            if len(keyp_tuple.keypoints) < 1:
+                return {}
+            individual_keypoints = np.stack(keyp_tuple.keypoints)
+            img_fns.append(img_fn)
+            keypoints.append(individual_keypoints)
+            imgs.append(img)
+
+        output_dict = {'fns': [img_fns],
+                       'img_paths': [img_paths],
                        'keypoints': [keypoints],
-                       'img': [img]}
+                       'imgs': [imgs]}
         return output_dict
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        if self.cnt >= len(self.img_paths):
+        if self.cnt >= len(self.img_dir_paths):
             raise StopIteration
-        img_path = self.img_paths[self.cnt]
+        img_dir_path = self.img_dir_paths[self.cnt]
         self.cnt += 1
-        return self.read_item(img_path)
+        return self.read_item(img_dir_path)

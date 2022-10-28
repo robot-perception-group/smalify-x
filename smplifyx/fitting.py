@@ -86,7 +86,7 @@ class FittingMonitor(object):
             prev_loss = loss.item()
         return prev_loss
 
-    def create_fitting_closure(self,optimizer, body_model, camera=None,
+    def create_fitting_closure(self,optimizer, body_model, cameras=None,
                                gt_joints=None, loss=None,
                                joints_conf=None,
                                return_verts=True, return_full_pose=False,
@@ -103,7 +103,7 @@ class FittingMonitor(object):
             body_model_output = body_model(return_verts=return_verts,
                                            body_pose=body_pose,
                                            return_full_pose=return_full_pose)
-            total_loss = loss(body_model_output, camera=camera,
+            total_loss = loss(body_model_output, cameras=cameras,
                               gt_joints=gt_joints,
                               body_model_faces=faces_tensor,
                               joints_conf=joints_conf,
@@ -169,7 +169,7 @@ class SMPLifyLoss(nn.Module):
                                                  device=weight_tensor.device)
                 setattr(self, key, weight_tensor)
 
-    def forward(self, body_model_output, camera, gt_joints, joints_conf,
+    def forward(self, body_model_output, cameras, gt_joints, joints_conf,
                 body_model_faces,
                 **kwargs):
         key_vids = self.key_vids
@@ -179,57 +179,74 @@ class SMPLifyLoss(nn.Module):
              'frontLeftAnkle','frontRightAnkle','backLeftAnkle','backRightAnkle','neck','TailTip','leftEar',
              'rightEar','nostrilLeft','nostrilRight','mouthLeft','mouthRight','cheekLeft','cheekRight',
              'mane','back','croup']
-        landmarks = np.array(torch.unsqueeze(torch.hstack([gt_joints[0], joints_conf.t()]),0)) # fix the 3.75
-        visible = landmarks[0][:, 2].astype(bool)
-        use_ids = [id for id in np.arange(landmarks[0].shape[0]) if visible[id]]
-        visible_vids = np.hstack([key_vids[0][id] for id in use_ids])
-        group = np.hstack([index * np.ones(len(key_vids[0][row_id])) for index, row_id in enumerate(use_ids)])
-        assignments = np.vstack([group == j for j in np.arange(group[-1] + 1)])
-        num_points = len(use_ids)
-        all_vids = visible_vids
-        #cam[i].v = sv[i][all_vids, :]
-        j2d = torch.Tensor(landmarks[0][use_ids, :2])
-        kp_weights = np.ones((landmarks[0].shape[0], 1))
-        kp_weights[landmarks_names.index('mane'), :] *= 2.
-        kp_weights[landmarks_names.index('leftEye'), :] *= .5
-        kp_weights[landmarks_names.index('rightEye'), :] *= .5
-        kp_weights[landmarks_names.index('leftEar'), :] *= .5
-        kp_weights[landmarks_names.index('leftEar'), :] *= .5
-        kp_weights[landmarks_names.index('nostrilLeft'), :] *= .5
-        kp_weights[landmarks_names.index('nostrilRight'), :] *= .5
-        kp_weights[landmarks_names.index('mouthLeft'), :] *= .5
-        kp_weights[landmarks_names.index('mouthRight'), :] *= .5
-        kp_weights = torch.Tensor(kp_weights)
-        projected_joints = camera(torch.index_select(body_model_output.vertices, 1, torch.tensor(all_vids)))
-        projected_joints = projected_joints[0]
-        kp_proj = 1500.0 * kp_weights[use_ids] * torch.sqrt(self.robustifier(torch.vstack([projected_joints[choice] if np.sum(choice) == 1 else projected_joints[choice].mean(axis=0) for choice in assignments]) - j2d)+1e-8) / np.sqrt(num_points)
-        joint_loss = torch.sum(torch.square(kp_proj))
-        # Calculate the loss from the Pose prior
-        pprior_loss = self.body_pose_prior(body_model_output.body_pose) * self.body_pose_weight ** 2
-        shape_loss = self.shape_prior(body_model_output.betas) * self.shape_weight ** 2
-        body_pose = body_model_output.full_pose[:, 3:66]
-        angle_prior_loss = torch.sum(
-            self.angle_prior(body_pose)) * self.bending_prior_weight
+
+        joint_loss = torch.Tensor([0])
+        shape_loss = torch.Tensor([0])
+        pprior_loss = torch.Tensor([0])
+        for camera_index, camera in enumerate(cameras):
+            landmarks = np.array(torch.unsqueeze(torch.hstack([gt_joints[camera_index][0], joints_conf[camera_index].t()]),0))
+            visible = landmarks[0][:, 2].astype(bool)
+            use_ids = [id for id in np.arange(landmarks[0].shape[0]) if visible[id]]
+            visible_vids = np.hstack([key_vids[0][id] for id in use_ids])
+            group = np.hstack([index * np.ones(len(key_vids[0][row_id])) for index, row_id in enumerate(use_ids)])
+            assignments = np.vstack([group == j for j in np.arange(group[-1] + 1)])
+            num_points = len(use_ids)
+            all_vids = visible_vids
+            #cam[i].v = sv[i][all_vids, :]
+            j2d = torch.Tensor(landmarks[0][use_ids, :2])
+            kp_weights = np.ones((landmarks[0].shape[0], 1))
+            kp_weights[landmarks_names.index('mane'), :] *= 2.
+            kp_weights[landmarks_names.index('leftEye'), :] *= .5
+            kp_weights[landmarks_names.index('rightEye'), :] *= .5
+            kp_weights[landmarks_names.index('leftEar'), :] *= .5
+            kp_weights[landmarks_names.index('leftEar'), :] *= .5
+            kp_weights[landmarks_names.index('nostrilLeft'), :] *= .5
+            kp_weights[landmarks_names.index('nostrilRight'), :] *= .5
+            kp_weights[landmarks_names.index('mouthLeft'), :] *= .5
+            kp_weights[landmarks_names.index('mouthRight'), :] *= .5
+            kp_weights = torch.Tensor(kp_weights)
+            projected_joints = camera(torch.index_select(body_model_output.vertices, 1, torch.tensor(all_vids)))
+            projected_joints = projected_joints[0]
+            kp_proj = 1500.0 * kp_weights[use_ids] * torch.sqrt(self.robustifier(torch.vstack([projected_joints[choice] if np.sum(choice) == 1 else projected_joints[choice].mean(axis=0) for choice in assignments]) - j2d)+1e-8) / np.sqrt(num_points)
+            joint_loss += torch.sum(torch.square(kp_proj))
+            # Calculate the loss from the Pose prior
+            pprior_loss += self.body_pose_prior(body_model_output.body_pose) * self.body_pose_weight ** 2
+            shape_loss += self.shape_prior(body_model_output.betas) * self.shape_weight ** 2
+            body_pose = body_model_output.full_pose[:, 3:66]
+            angle_prior_loss = torch.sum(
+                self.angle_prior(body_pose)) * self.bending_prior_weight
         total_loss = joint_loss + shape_loss + pprior_loss
         return total_loss
 
 class SMPLifyCameraInitLoss(nn.Module):
-    def __init__(self, init_joints_idxs, trans_estimation=None,
+    def __init__(self, init_joints_idxs, trans_estimations=None,
+                 #cam_prior_poses=None,
                  data_weight=1.0,
                  depth_loss_weight=1e2,
                  dtype=torch.float32,
                  key_vids=None,
+                 #cam_pose_prior = None,
                  **kwargs):
         super(SMPLifyCameraInitLoss, self).__init__()
         self.dtype = dtype
         self.robustifier = utils.GMoF(rho=150.0)
+        #self.cam_pose_prior = cam_pose_prior
 
-        if trans_estimation is not None:
+        if trans_estimations is not None:
             self.register_buffer(
-                'trans_estimation',
-                utils.to_tensor(trans_estimation, dtype=dtype))
+                'trans_estimations',
+                utils.to_tensor(trans_estimations, dtype=dtype))
         else:
-            self.trans_estimation = trans_estimation
+            self.trans_estimations = trans_estimations
+
+        '''if cam_prior_poses is not None:
+            self.register_buffer(
+                'cam_prior_poses',
+                utils.to_tensor(cam_prior_poses, dtype=dtype))
+        else:
+            self.cam_prior_poses  = cam_prior_poses'''
+
+
         self.register_buffer('data_weight',torch.tensor(data_weight, dtype=dtype))
         self.register_buffer(
             'init_joints_idxs',
@@ -237,6 +254,7 @@ class SMPLifyCameraInitLoss(nn.Module):
         self.register_buffer('depth_loss_weight',
                              torch.tensor(depth_loss_weight, dtype=dtype))
         self.key_vids = key_vids
+        #self.register_buffer('cam_pose_weight', torch.tensor(cam_pose_weight, dtype=dtype))
 
     def reset_loss_weights(self, loss_weight_dict):
         for key in loss_weight_dict:
@@ -247,28 +265,34 @@ class SMPLifyCameraInitLoss(nn.Module):
                                              device=weight_tensor.device)
                 setattr(self, key, weight_tensor)
 
-    def forward(self, body_model_output, camera, gt_joints, body_model_faces, joints_conf, **kwargs):
+    def forward(self, body_model_output, cameras, gt_joints, body_model_faces, joints_conf, **kwargs):
         key_vids = self.key_vids
         i = 0
-        landmarks = np.array(torch.unsqueeze(torch.hstack([gt_joints[0], joints_conf.t()]), 0))
-        visible = landmarks[i][:, 2].astype(bool)
-        init_joints_idxs = self.init_joints_idxs #torch.tensor([12, 10, 11, 7, 8, 9]) # removed 18 (neck), 13
-        use_ids = [id for id in np.arange(landmarks[i].shape[0]) if (visible[id] and id in init_joints_idxs)]
-        visible_vids = np.hstack([key_vids[i][id].astype(int) for id in use_ids])
-        group = np.hstack([index * np.ones(len(key_vids[i][row_id])) for index, row_id in enumerate(use_ids)])
-        assignments = np.vstack([group == j for j in np.arange(group[-1] + 1)])
-        # assignments = torch.Tensor(assignments)
-        num_points = len(use_ids)
-        all_vids = visible_vids
-        # cam[i].v = sv[i][all_vids, :]
-        j2d = torch.Tensor(landmarks[i][use_ids, :2])
-        kp_weights = np.ones((landmarks[i].shape[0], 1))
-        kp_weights = torch.Tensor(kp_weights)
-        projected_joints = camera(torch.index_select(body_model_output.vertices, 1, torch.tensor(all_vids)))
-        projected_joints = projected_joints[0]
-        kp_proj = torch.sqrt(self.robustifier(torch.vstack(
-            [projected_joints[choice] if np.sum(choice) == 1 else projected_joints[choice].mean(axis=0) for choice in
-             assignments]) - j2d)) / np.sqrt(num_points)
-        joint_loss = torch.square(self.data_weight) * torch.sum(torch.square(kp_proj))
-        depth_loss = self.depth_loss_weight ** 2 * torch.sum((camera.translation[:, 2] - self.trans_estimation[:, 2]).pow(2))
-        return joint_loss + depth_loss
+        init_joints_idxs = self.init_joints_idxs  # torch.tensor([12, 10, 11, 7, 8, 9]) # removed 18 (neck), 13
+        joint_loss = torch.Tensor([0])
+        depth_loss = torch.Tensor([0])
+        cam_pose_loss = torch.Tensor([0])
+        for camera_index, camera in enumerate(cameras):
+            landmarks = np.array(torch.unsqueeze(torch.hstack([gt_joints[camera_index][0], joints_conf[camera_index].t()]), 0))
+            visible = landmarks[i][:, 2].astype(bool)
+            use_ids = [id for id in np.arange(landmarks[i].shape[0]) if (visible[id] and id in init_joints_idxs)]
+            visible_vids = np.hstack([key_vids[i][id].astype(int) for id in use_ids])
+            group = np.hstack([index * np.ones(len(key_vids[i][row_id])) for index, row_id in enumerate(use_ids)])
+            assignments = np.vstack([group == j for j in np.arange(group[-1] + 1)])
+            # assignments = torch.Tensor(assignments)
+            num_points = len(use_ids)
+            all_vids = visible_vids
+            # cam[i].v = sv[i][all_vids, :]
+            j2d = torch.Tensor(landmarks[i][use_ids, :2])
+            #kp_weights = np.ones((landmarks[i].shape[0], 1))
+            #kp_weights = torch.Tensor(kp_weights)
+            projected_joints = camera(torch.index_select(body_model_output.vertices, 1, torch.tensor(all_vids)))
+            projected_joints = projected_joints[0]
+            kp_proj = torch.sqrt(self.robustifier(torch.vstack(
+                [projected_joints[choice] if np.sum(choice) == 1 else projected_joints[choice].mean(axis=0) for choice in
+                 assignments]) - j2d)) / np.sqrt(num_points)
+            #cam_pose_loss += self.cam_pose_prior(camera.translation - cam_prior_poses[camera_index]) * self.cam_pose_weight ** 2
+            joint_loss += torch.square(self.data_weight) * torch.sum(torch.square(kp_proj))
+            # is the index 2 correct??
+            depth_loss += self.depth_loss_weight ** 2 * torch.sum((camera.translation[:, 2] - self.trans_estimations[camera_index][:, 2]).pow(2))
+        return joint_loss + depth_loss# + cam_pose_loss

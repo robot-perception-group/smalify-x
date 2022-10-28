@@ -29,10 +29,14 @@ def main(**args):
                         betas=betas,
                         **args)
     body_model = smplx.create(**model_params)
-    camera = create_camera(focal_length_x=args['focal_length'],
-                           focal_length_y=args['focal_length'],
-                           **args)
-    camera.rotation_aa.requires_grad = False
+    cameras = []
+    num_cameras = len(dataset_obj[0]["fns"][0])
+    for el in range(num_cameras):
+        camera = create_camera(focal_length_x=args['focal_length'],
+                               focal_length_y=args['focal_length'],
+                               **args)
+        camera.rotation_aa.requires_grad = False
+        cameras.append(camera)
     body_pose_prior = create_prior(
         prior_type=args.get('body_prior_type'),
         **args)
@@ -40,42 +44,48 @@ def main(**args):
         prior_type=args.get('shape_prior_type', 'mahalanobis_shape'),
         **args)
     angle_prior = create_prior(prior_type='angle', dtype=args['dtype'])
+    #cam_pose_prior = create_prior(prior_type=args.get('cam_prior_type', 'l2'),**args)
     for idx, data in enumerate(dataset_obj):
-        img = data['img'][0]
-        fn = data['fn'][0]
+        imgs = data['imgs'][0]
+        fns = data['fns'][0]
         keypoints = data['keypoints'][0]
         img_scaled_w = 1280
-        img_scaling_factor = img.shape[1] / img_scaled_w
-        img_scaled_h = round(img.shape[0] / img_scaling_factor)
-        img = cv2.resize(img, dsize=(img_scaled_w, img_scaled_h), interpolation=cv2.INTER_CUBIC)
-        keypoints[0][:,:2] = keypoints[0][:,:2] / img_scaling_factor
-        print('Processing: {}'.format(data['img_path'][0]))
-        curr_result_folder = osp.join(result_folder, fn)
+        img_scaling_factor = imgs[0].shape[1] / img_scaled_w
+        img_scaled_h = round(imgs[0].shape[0] / img_scaling_factor)
+
+
+        for i, _ in enumerate(imgs):
+            imgs[i] = cv2.resize(imgs[i], dsize=(img_scaled_w, img_scaled_h), interpolation=cv2.INTER_CUBIC)
+            keypoints[i][0][:,:2] = keypoints[i][0][:,:2] / img_scaling_factor
+        snapshot_name = osp.split(osp.split(data['img_paths'][0][0])[0])[-1]
+        print('Processing: {}'.format(snapshot_name))
+        curr_result_folder = osp.join(result_folder, snapshot_name)
         if not osp.exists(curr_result_folder):
             os.makedirs(curr_result_folder)
-        curr_mesh_folder = osp.join(mesh_folder, fn)
+        curr_mesh_folder = osp.join(mesh_folder, snapshot_name)
         if not osp.exists(curr_mesh_folder):
             os.makedirs(curr_mesh_folder)
-        for person_id in range(keypoints.shape[0]):
-            curr_result_fn = osp.join(curr_result_folder,'{:03d}.pkl'.format(person_id))
-            curr_mesh_fn = osp.join(curr_mesh_folder,'{:03d}.obj'.format(person_id))
-            curr_img_folder = osp.join(output_folder, 'images', fn,'{:03d}'.format(person_id))
-            if not osp.exists(curr_img_folder):
-                os.makedirs(curr_img_folder)
-            out_img_fn = osp.join(curr_img_folder, 'output.png')
 
-            fit_single_frame(img, keypoints[[person_id]],
-                             body_model=body_model,
-                             camera=camera,
-                             result_folder=curr_result_folder,
-                             out_img_fn=out_img_fn,
-                             result_fn=curr_result_fn,
-                             mesh_fn=curr_mesh_fn,
-                             shape_prior=shape_prior,
-                             body_pose_prior=body_pose_prior,
-                             angle_prior=angle_prior,
-                             betas=betas,
-                             **args)
+
+        curr_result_fn = osp.join(curr_result_folder,'output.pkl')
+        curr_mesh_fn = osp.join(curr_mesh_folder,'output.obj')
+        '''curr_img_folder = osp.join(output_folder, 'images', fn,'{:03d}'.format(person_id))
+        if not osp.exists(curr_img_folder):
+            os.makedirs(curr_img_folder)
+        out_img_fn = osp.join(curr_img_folder, 'output.png')'''
+
+        fit_single_frame(imgs, keypoints,
+                         body_model=body_model,
+                         cameras=cameras,
+                         result_folder=curr_result_folder,
+                         result_fn=curr_result_fn,
+                         mesh_fn=curr_mesh_fn,
+                         shape_prior=shape_prior,
+                         body_pose_prior=body_pose_prior,
+                         angle_prior=angle_prior,
+                         #cam_pose_prior=cam_pose_prior,
+                         betas=betas,
+                         **args)
     elapsed = time.time() - start
     time_msg = time.strftime('%H hours, %M minutes, %S seconds',time.gmtime(elapsed))
     print('Processing the data took: {}'.format(time_msg))
