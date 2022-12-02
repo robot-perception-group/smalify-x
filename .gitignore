@@ -107,3 +107,12 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+
+
+
+
+
+
+
+smpl/
+output/

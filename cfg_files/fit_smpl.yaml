@@ -3,6 +3,7 @@ data_folder: "data"
 #output_folder: 'output'
 prior_folder: 'priors'
 model_folder: '/home/frg08/Code/smplify-x/smpl/models/SMAL.pkl'
+#cam_pose_folder: 'data/cam_poses'
 #result_folder: 'output/results'
 #mesh_folder: 'output/meshes'
 model_type: 'smpl'
@@ -31,13 +32,13 @@ ign_part_pairs: ["9,16", "9,17", "6,16", "6,17", "1,2", "12,22"]
 penalize_outside: True
 max_collisions: 128
 # LBFGS with line search
-optim_type: 'lbfgs'
-#optim_type: 'lbfgsls'
+#optim_type: 'lbfgs'
+optim_type: 'adam'
 ftol: 1e-9
 gtol: 1e-9
-lr: 0.1 # °°°°°° 1.0
+lr: 0.01 # °°°°°° 1.0
 # Max number of optimization iterations
-maxiters: 15 #°°°°°° 30
+maxiters: 400 #°°°°°° 30
 interactive: True
 visualize: True
 

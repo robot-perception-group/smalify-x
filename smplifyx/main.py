@@ -14,6 +14,7 @@ from camera import create_camera
 from prior import create_prior
 
 def main(**args):
+    print(args)
     output_folder = 'output'
     result_folder = output_folder+'/results'
     mesh_folder = output_folder+'/meshes'
@@ -21,16 +22,18 @@ def main(**args):
     start = time.time()
     betas = torch.Tensor([[float(el) for el in args['zebra_betas']]])
 
+    print("hello")
+
     model_params = dict(model_path=args.get('model_folder'),
                         create_global_orient=True,
                         create_body_pose=not args.get('use_vposer'),
                         create_betas=True,
-                        create_transl=False,
+                        create_transl=True,
                         betas=betas,
                         **args)
     body_model = smplx.create(**model_params)
     cameras = []
-    num_cameras = len(dataset_obj[0]["fns"][0])
+    num_cameras = len(dataset_obj[0]["cam_names"][0])
     for el in range(num_cameras):
         camera = create_camera(focal_length_x=args['focal_length'],
                                focal_length_y=args['focal_length'],
@@ -44,10 +47,9 @@ def main(**args):
         prior_type=args.get('shape_prior_type', 'mahalanobis_shape'),
         **args)
     angle_prior = create_prior(prior_type='angle', dtype=args['dtype'])
-    #cam_pose_prior = create_prior(prior_type=args.get('cam_prior_type', 'l2'),**args)
+    cam_pose_prior = create_prior(prior_type=args.get('cam_prior_type', 'l2'),**args)
     for idx, data in enumerate(dataset_obj):
         imgs = data['imgs'][0]
-        fns = data['fns'][0]
         keypoints = data['keypoints'][0]
         img_scaled_w = 1280
         img_scaling_factor = imgs[0].shape[1] / img_scaled_w
@@ -57,7 +59,7 @@ def main(**args):
         for i, _ in enumerate(imgs):
             imgs[i] = cv2.resize(imgs[i], dsize=(img_scaled_w, img_scaled_h), interpolation=cv2.INTER_CUBIC)
             keypoints[i][0][:,:2] = keypoints[i][0][:,:2] / img_scaling_factor
-        snapshot_name = osp.split(osp.split(data['img_paths'][0][0])[0])[-1]
+        snapshot_name = data['snapshot_name']# osp.split(osp.split(data['img_paths'][0][0])[0])[-1]
         print('Processing: {}'.format(snapshot_name))
         curr_result_folder = osp.join(result_folder, snapshot_name)
         if not osp.exists(curr_result_folder):
@@ -83,7 +85,7 @@ def main(**args):
                          shape_prior=shape_prior,
                          body_pose_prior=body_pose_prior,
                          angle_prior=angle_prior,
-                         #cam_pose_prior=cam_pose_prior,
+                         cam_pose_prior=cam_pose_prior,
                          betas=betas,
                          **args)
     elapsed = time.time() - start

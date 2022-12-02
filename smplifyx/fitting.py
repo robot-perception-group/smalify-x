@@ -74,7 +74,7 @@ class FittingMonitor(object):
                 break
             if n > 0 and prev_loss is not None and self.ftol > 0:
                 loss_rel_change = utils.rel_change(prev_loss, loss.item())
-                if loss_rel_change <= self.ftol:
+                if np.abs(loss_rel_change) <= self.ftol:
                     break
             if all([torch.abs(var.grad.view(-1).max()).item() < self.gtol
                     for var in params if var.grad is not None]):
@@ -220,17 +220,19 @@ class SMPLifyLoss(nn.Module):
 
 class SMPLifyCameraInitLoss(nn.Module):
     def __init__(self, init_joints_idxs, trans_estimations=None,
-                 #cam_prior_poses=None,
+                 cam_prior_poses=None,
                  data_weight=1.0,
                  depth_loss_weight=1e2,
                  dtype=torch.float32,
                  key_vids=None,
-                 #cam_pose_prior = None,
+                 cam_pose_prior = None,
+                 cam_pose_weight = 10,
                  **kwargs):
         super(SMPLifyCameraInitLoss, self).__init__()
         self.dtype = dtype
         self.robustifier = utils.GMoF(rho=150.0)
-        #self.cam_pose_prior = cam_pose_prior
+        self.cam_pose_prior = cam_pose_prior
+        self.losses_log = []
 
         if trans_estimations is not None:
             self.register_buffer(
@@ -239,12 +241,12 @@ class SMPLifyCameraInitLoss(nn.Module):
         else:
             self.trans_estimations = trans_estimations
 
-        '''if cam_prior_poses is not None:
+        if cam_prior_poses is not None:
             self.register_buffer(
                 'cam_prior_poses',
                 utils.to_tensor(cam_prior_poses, dtype=dtype))
         else:
-            self.cam_prior_poses  = cam_prior_poses'''
+            self.cam_prior_poses  = cam_prior_poses
 
 
         self.register_buffer('data_weight',torch.tensor(data_weight, dtype=dtype))
@@ -254,7 +256,7 @@ class SMPLifyCameraInitLoss(nn.Module):
         self.register_buffer('depth_loss_weight',
                              torch.tensor(depth_loss_weight, dtype=dtype))
         self.key_vids = key_vids
-        #self.register_buffer('cam_pose_weight', torch.tensor(cam_pose_weight, dtype=dtype))
+        self.register_buffer('cam_pose_weight', torch.tensor(cam_pose_weight, dtype=dtype))
 
     def reset_loss_weights(self, loss_weight_dict):
         for key in loss_weight_dict:
@@ -265,7 +267,7 @@ class SMPLifyCameraInitLoss(nn.Module):
                                              device=weight_tensor.device)
                 setattr(self, key, weight_tensor)
 
-    def forward(self, body_model_output, cameras, gt_joints, body_model_faces, joints_conf, **kwargs):
+    def forward(self, body_model_output, cameras, gt_joints, joints_conf, **kwargs):
         key_vids = self.key_vids
         i = 0
         init_joints_idxs = self.init_joints_idxs  # torch.tensor([12, 10, 11, 7, 8, 9]) # removed 18 (neck), 13
@@ -291,8 +293,10 @@ class SMPLifyCameraInitLoss(nn.Module):
             kp_proj = torch.sqrt(self.robustifier(torch.vstack(
                 [projected_joints[choice] if np.sum(choice) == 1 else projected_joints[choice].mean(axis=0) for choice in
                  assignments]) - j2d)) / np.sqrt(num_points)
-            #cam_pose_loss += self.cam_pose_prior(camera.translation - cam_prior_poses[camera_index]) * self.cam_pose_weight ** 2
+            #cam_pose_loss += self.cam_pose_prior(camera.translation - self.cam_prior_poses[camera_index][:3]) * self.cam_pose_weight ** 2
             joint_loss += torch.square(self.data_weight) * torch.sum(torch.square(kp_proj))
             # is the index 2 correct??
-            depth_loss += self.depth_loss_weight ** 2 * torch.sum((camera.translation[:, 2] - self.trans_estimations[camera_index][:, 2]).pow(2))
-        return joint_loss + depth_loss# + cam_pose_loss
+            #depth_loss += self.depth_loss_weight ** 2 * torch.sum((camera.translation[:, 2] - self.trans_estimations[camera_index][:, 2]).pow(2))
+            self.losses_log.append(joint_loss.detach().tolist()[0])
+            #print(self.losses_log)
+        return joint_loss #+ depth_loss #+ cam_pose_loss

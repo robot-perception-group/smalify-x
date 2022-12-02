@@ -16,6 +16,7 @@ from collections import defaultdict
 import PIL.Image as pil_img
 from optimizers import optim_factory
 import fitting
+import json
 
 def fit_single_frame(imgs,
                      keypoints,
@@ -24,7 +25,7 @@ def fit_single_frame(imgs,
                      body_pose_prior,
                      shape_prior,
                      angle_prior,
-                     #cam_pose_prior,
+                     cam_pose_prior,
                      betas,
                      result_fn='out.pkl',
                      mesh_fn='out.obj',
@@ -80,7 +81,8 @@ def fit_single_frame(imgs,
                                 trans_estimations=init_t,
                                 init_joints_idxs=init_joints_idxs,
                                 depth_loss_weight=depth_loss_weight,
-                                #cam_pose_prior=cam_pose_prior,
+                                cam_pose_prior=cam_pose_prior,
+                                #cam_prior_poses=cam_prior_poses,
                                 dtype=dtype,
                                 key_vids=key_vids).to(device=device)
 
@@ -93,17 +95,29 @@ def fit_single_frame(imgs,
         body_model.reset_params(body_pose=body_mean_pose, betas=betas)
         with torch.no_grad():
             body_model.betas[:] = torch.Tensor([betas])
+            body_model.global_orient = torch.nn.Parameter(torch.Tensor([[np.pi/2, 0, 0]]))#[[0, 2.2, -2.2]]))
             for camera_i, camera in enumerate(cameras):
-                camera.translation[:] = init_t[camera_i].view_as(camera.translation)
+                #camera.translation[:] = torch.Tensor([[0,-10,-10]])#init_t[camera_i].view_as(camera.translation) # !!! enter proper camera translation
+                camera.global_translation[:] = torch.Tensor([[10*(-1)**camera_i,-10,-20]])
+                camera.global_translation.requires_grad = False
                 camera.center[:] = torch.Tensor([W/2, H/2])
 
 
         camera_opt_params = []
         for camera in cameras:
-            camera.translation.requires_grad = True
+            #camera.global_translation.requires_grad = True
+            #camera.translation.requires_grad = True
             camera.rotation_aa.requires_grad = True
-            camera_opt_params.append(camera.translation)
+            #camera_opt_params.append(camera.global_translation)
+            #camera_opt_params.append(camera.translation)
             camera_opt_params.append(camera.rotation_aa)
+
+        body_model.transl.requires_grad = True
+        body_model.global_orient.requires_grad = True
+
+        camera_opt_params.append(body_model.transl)
+        camera_opt_params.append(body_model.global_orient)
+
         camera_optimizer, camera_create_graph = optim_factory.create_optimizer(
             camera_opt_params,
             **kwargs)
@@ -119,6 +133,8 @@ def fit_single_frame(imgs,
         cam_init_loss_val = monitor.run_fitting(camera_optimizer,
                                                 fit_camera,
                                                 camera_opt_params, body_model)
+
+        #print('losses log: \n',camera_loss.losses_log, '\nnumber of steps: ',len(camera_loss.losses_log))
         if interactive:
             if use_cuda and torch.cuda.is_available():
                 torch.cuda.synchronize()
@@ -150,10 +166,17 @@ def fit_single_frame(imgs,
         opt_start = time.time()
 
         new_params = defaultdict(body_pose=body_mean_pose,
-                                 betas=betas)
+                                 betas=betas,
+                                 global_orient=body_model.global_orient,
+                                 transl = body_model.transl)
         body_model.reset_params(**new_params)
 
         for opt_idx, curr_weights in enumerate(tqdm(opt_weights, desc='Stage')):
+
+            body_model.transl.requires_grad = False
+            body_model.betas.requires_grad = False
+            body_model.body_pose.requires_grad = False
+            body_model.global_orient.requires_grad = True
 
             body_params = list(body_model.parameters())
 
@@ -226,6 +249,12 @@ def fit_single_frame(imgs,
         out_mesh.apply_transform(rot)
         out_mesh.export(mesh_fn)
 
+        mesh_dict = {}
+        mesh_dict['vertices'] = vertices.tolist()
+        mesh_dict['faces'] = body_model.faces.tolist()
+        with open(mesh_fn+'_dict.json', 'w') as fp:
+            json.dump(mesh_dict, fp)
+
 
     persp_camera = camera
 
@@ -252,27 +281,21 @@ def fit_single_frame(imgs,
             #camera_pose[:3,:3] = np.array([[0.866, -0.5, 0], [0.5, 0.866, 0], [0, 0, 1]])
             camera_pose[:3, 3] = camera_transl
 
-            '''camera = pyrender.camera.IntrinsicsCamera(
-                fx=focal_length, fy=focal_length,
-                cx=camera_center[0], cy=camera_center[1])
-            scene.add(camera, pose=camera_pose)
-            # Get the lights from the viewer
-            light_nodes = monitor.mv.viewer._create_raymond_lights()
-            for node in light_nodes:
-                scene.add_node(node)
-            r = pyrender.OffscreenRenderer(viewport_width=W,
-                                           viewport_height=H,
-                                           point_size=1.0)
-            color, _ = r.render(scene, flags=pyrender.RenderFlags.RGBA)
-            color = color.astype(np.float32) / 255.0
-            valid_mask = (color[:, :, -1] > 0)[:, :, np.newaxis]
-            input_img = imgs[camera_index].detach().cpu().numpy()
-            output_img = (color[:, :, :-1] * valid_mask + (1 - valid_mask) * input_img)
-            #with torch.no_grad():
-            #    persp_camera.translation[0][0] *= -1 # fix this
-            scene.clear()'''
             input_img = imgs[camera_index].detach().cpu().numpy()
             output_img = input_img
+
+
+            cam_param_dict = {}
+            #cam_param_dict['translation'] = camera.translation[0].detach().tolist()
+            #cam_param_dict['rotation'] = camera.rotation_aa.detach().tolist()
+
+            R = camera.rotation[0].detach()
+            t = camera.translation[0].detach()
+            cam_param_dict['translation'] = (-R.T@t).tolist()
+            cam_param_dict['rotation'] = (R.T).tolist()
+
+            with open(mesh_fn + '_' + str(camera_index) + '_cam_dict.json', 'w') as fp:
+                json.dump(cam_param_dict, fp)
 
             #model_output = body_model(return_verts=True)
             projected_keypoints = persp_camera(torch.Tensor([[torch.mean(torch.index_select(model_output.vertices, 1, torch.tensor(keypoint_ids.astype(np.int32)))[0],axis=0).tolist() for keypoint_ids in key_vids[0]]]))
@@ -280,10 +303,11 @@ def fit_single_frame(imgs,
             img = pil_img.fromarray((output_img * 255).astype(np.uint8))
             plt.clf()
             plt.imshow(img)
-            plt.scatter(x=all_vertices_projected[0,:,0].detach().numpy(), y=all_vertices_projected[0,:,1].detach().numpy(), c='w', s=input_img.shape[1]*0.0001)
-            plt.scatter(x=projected_keypoints[0,:,0].detach().numpy(), y=projected_keypoints[0,:,1].detach().numpy(), c='r', s=input_img.shape[1]*0.001)
-            plt.scatter(x=keypoints[camera_index][0,:,0], y=keypoints[camera_index][0,:,1], c='g', s=input_img.shape[1]*0.001)
-            plt.scatter(x=keypoints[camera_index][0, init_joints_idxs, 0], y=keypoints[camera_index][0, init_joints_idxs, 1], c='b', s=input_img.shape[1] * 0.001)
+            keypoint_circle_size = input_img.shape[1]*0.000001
+            plt.scatter(x=all_vertices_projected[0,:,0].detach().numpy(), y=all_vertices_projected[0,:,1].detach().numpy(), c='w', s=keypoint_circle_size)
+            plt.scatter(x=projected_keypoints[0,:,0].detach().numpy(), y=projected_keypoints[0,:,1].detach().numpy(), c='r', s=keypoint_circle_size)
+            plt.scatter(x=keypoints[camera_index][0,:,0], y=keypoints[camera_index][0,:,1], c='g', s=keypoint_circle_size)
+            plt.scatter(x=keypoints[camera_index][0, init_joints_idxs, 0], y=keypoints[camera_index][0, init_joints_idxs, 1], c='b', s=keypoint_circle_size)
             for gt, proj in zip(keypoints[camera_index][0,:,:2], projected_keypoints[0,:].detach().numpy()):
                 if gt[0] or gt[1]:
                     plt.plot([gt[0], proj[0]], [gt[1], proj[1]], c='r', lw=input_img.shape[1] * 0.0002)

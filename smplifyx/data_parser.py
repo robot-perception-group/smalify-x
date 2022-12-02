@@ -22,6 +22,7 @@ from __future__ import division
 import sys
 import os
 import os.path as osp
+from PIL import Image
 
 import json
 
@@ -133,28 +134,28 @@ class AnimalData(Dataset):
                      if img_fn.endswith('.png') or
                      img_fn.endswith('.jpg') and not img_fn.startswith('.')]
 
-        img_fns = []
+        cam_names = []
         keypoints = []
         imgs = []
 
         for img_path in img_paths:
 
             img = cv2.imread(img_path).astype(np.float32)[:, :, ::-1] / 255.0
-            img_fn, _ = osp.splitext(osp.split(img_path)[1])
+            cam_name, _ = osp.splitext(osp.split(img_path)[1])
             snapshot_name = osp.split(img_dir_path)[-1]
-            keypoint_fn = osp.join(self.keyp_folder,snapshot_name,img_fn + '_keypoints.json')
+            keypoint_fn = osp.join(self.keyp_folder,snapshot_name,cam_name + '_keypoints.json')
             keyp_tuple = read_keypoints(keypoint_fn)
             if len(keyp_tuple.keypoints) < 1:
                 return {}
             individual_keypoints = np.stack(keyp_tuple.keypoints)
-            img_fns.append(img_fn)
+            cam_names.append(cam_name)
             keypoints.append(individual_keypoints)
             imgs.append(img)
 
-        output_dict = {'fns': [img_fns],
-                       'img_paths': [img_paths],
-                       'keypoints': [keypoints],
-                       'imgs': [imgs]}
+        output_dict = {'cam_names': [cam_names],
+                        'snapshot_name': osp.split(osp.split(img_paths[0])[0])[-1],
+                        'keypoints': [keypoints],
+                        'imgs': [imgs]}
         return output_dict
 
     def __iter__(self):
@@ -166,3 +167,63 @@ class AnimalData(Dataset):
         img_dir_path = self.img_dir_paths[self.cnt]
         self.cnt += 1
         return self.read_item(img_dir_path)
+
+'''class AnimalData(Dataset):
+    # returns data for one timestamp (images, keypoints)
+    def __init__(self, data_folder, img_folder='images',
+                 keyp_folder='keypoints',
+                 fps=30,
+                 dtype=torch.float32):
+        super(AnimalData, self).__init__()
+
+        self.data_folder = data_folder
+        self.vid_paths = [osp.join(self.data_folder, vid_fn) for vid_fn in os.listdir(self.data_folder) if vid_fn.endswith('.MP4')]
+        self.vid_paths = sorted(self.vid_paths)
+        self.vidcaps = [cv2.VideoCapture(vid_path) for vid_path in self.vid_paths]
+        self.cam_names = [vid_path.split('.')[-2].split('/')[-1] for vid_path in self.vid_paths]
+
+        self.kp_paths = [vidpath.split('.')[-1]+'.json' for vidpath in self.vidpaths]
+        self.kps = []
+        for kp_path in self.kp_paths:
+            with open(kp_path, 'r') as f:
+                self.kps.append(json.load(f))
+
+        self.cnt = 0
+
+    def __len__(self):
+        return len(self.kps[0])
+
+    def __getitem__(self, idx):
+        img_dir_path = self.img_dir_paths[idx]
+        return self.read_item(img_dir_path)
+
+    def read_item(self, timestamp):
+        keypoints = []
+        imgs = []
+
+        for vidcap, kp in zip(self.vidcaps, self.kps):
+            vidcap.set(cv2.CAP_PROP_POS_MSEC, timestamp*1000/30)
+            success,image = vidcap.read()
+            if not success:
+                break
+            im = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+            imgs.append(im)
+
+            keypoints.append(kp[str(timestamp)])
+
+
+        output_dict = {'cam_names': [self.cam_names],
+                        'snapshot_name': timestamp,
+                        'keypoints': [keypoints],
+                        'imgs': [imgs]}
+        return output_dict
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.cnt >= len(self.kps[0]):
+            raise StopIteration
+        timestamp = self.kps[0][self.cnt]
+        self.cnt += 1
+        return self.read_item(timestamp)'''

@@ -42,15 +42,20 @@ def create_camera(camera_type='persp', **kwargs):
 
 
 class PerspectiveCamera(nn.Module):
+
     FOCAL_LENGTH = 5000
 
-    def __init__(self, rotation=None, translation=None, global_translation=None,
+    def __init__(self, rotation=None, translation=None,
                  focal_length_x=None, focal_length_y=None,
                  batch_size=1,
                  center=None, dtype=torch.float32, **kwargs):
         super(PerspectiveCamera, self).__init__()
         self.batch_size = batch_size
         self.dtype = dtype
+        # Make a buffer so that PyTorch does not complain when creating
+        # the camera matrix
+        self.register_buffer('zero',
+                             torch.zeros([batch_size], dtype=dtype))
 
         if focal_length_x is None or type(focal_length_x) == float:
             focal_length_x = torch.full(
@@ -73,7 +78,10 @@ class PerspectiveCamera(nn.Module):
             center = torch.zeros([batch_size, 2], dtype=dtype)
         self.register_buffer('center', center)
 
-        rotation_aa = torch.Tensor([0, 0, 0])
+
+
+
+        rotation_aa = torch.Tensor([0,0,0])
         rotation_aa = nn.Parameter(rotation_aa, requires_grad=True)
         self.register_parameter('rotation_aa', rotation_aa)
 
@@ -81,44 +89,56 @@ class PerspectiveCamera(nn.Module):
         self.register_buffer('rotation', rotation)
 
 
-        if global_translation is None:
-            global_translation = torch.zeros([batch_size, 3], dtype=dtype)
-        global_translation = nn.Parameter(global_translation, requires_grad=True)
-        self.register_parameter('global_translation', global_translation)
-
-        translation = -torch.matmul(self.rotation,self.global_translation.T).T # check!!
-        self.register_buffer('translation', translation)
 
 
+        '''if rotation is None:
+            rotation = torch.eye(
+                3, dtype=dtype).unsqueeze(dim=0).repeat(batch_size, 1, 1)
 
-        '''if translation is None:
+        rotation = nn.Parameter(rotation, requires_grad=True)
+        self.register_parameter('rotation', rotation)'''
+
+
+
+
+
+
+        if translation is None:
             translation = torch.zeros([batch_size, 3], dtype=dtype)
-        translation = nn.Parameter(translation, requires_grad=True)
-        self.register_parameter('translation', translation)'''
 
-
-
-
-
-        intrinsic = torch.Tensor([[focal_length_x, 0, center[0, 0]], [0, focal_length_y, center[0, 1]], [0, 0, 1]])
-        # intrinsic = nn.Parameter([[focal_length_x, 0, center[0,0]], [0, focal_length_y, center[0,1]], [0, 0, 1]])
-        self.register_buffer('intrinsic', intrinsic)
-
-        #print("I am Nitin's camera")
+        translation = nn.Parameter(translation,
+                                   requires_grad=True)
+        self.register_parameter('translation', translation)
 
     def forward(self, points):
-
-        self.intrinsic = torch.Tensor([[self.focal_length_x, 0, self.center[0, 0]], [0, self.focal_length_y, self.center[0, 1]], [0, 0, 1]])
-
         self.rotation = batch_rodrigues(torch.unsqueeze(self.rotation_aa, 0))
-        self.translation = -torch.matmul(self.rotation,self.global_translation.T).T
-        extr_intr_mul = torch.matmul(self.intrinsic, torch.cat((self.rotation[0], self.translation.view(3, -1)), dim=1))
 
-        # points2d = torch.matmul(extr_intr_mul[:3, :3], points.unsqueeze(-1)).squeeze(-1) + extr_intr_mul[:, 3]
-        hom_points = torch.cat((points[0], torch.Tensor([1.0] * len(points[0])).unsqueeze(-1)), dim=1)
-        points2d = torch.matmul(extr_intr_mul, hom_points.T).T
+        device = points.device
 
-        #print(self.global_translation, self.translation)
+        with torch.no_grad():
+            camera_mat = torch.zeros([self.batch_size, 2, 2],
+                                     dtype=self.dtype, device=points.device)
+            camera_mat[:, 0, 0] = self.focal_length_x
+            camera_mat[:, 1, 1] = self.focal_length_y
+
+        camera_transform = transform_mat(self.rotation,
+                                         self.translation.unsqueeze(dim=-1))
+        homog_coord = torch.ones(list(points.shape)[:-1] + [1],
+                                 dtype=points.dtype,
+                                 device=device)
+        # Convert the points to homogeneous coordinates
+        points_h = torch.cat([points, homog_coord], dim=-1)
+
+        projected_points = torch.einsum('bki,bji->bjk',
+                                        [camera_transform, points_h])
+
+        img_points = torch.div(projected_points[:, :, :2],
+                               projected_points[:, :, 2].unsqueeze(dim=-1))
+        img_points = torch.einsum('bki,bji->bjk', [camera_mat, img_points]) \
+            + self.center.unsqueeze(dim=1)
+
+        #print(self.rotation_aa.detach().tolist())
 
 
-        return (points2d[:, :2] / points2d[:, 2:3]).unsqueeze(dim=0)  # + self.center.unsqueeze(dim=1)
+        #print('°°°°° \n camera_mat \n', camera_mat, '\n camera_transform \n', camera_transform, '\n homog_coord \n', homog_coord, '\n points_h \n', points_h, '\n projected_points \n', projected_points, '\n img_points \n' ,img_points, '\n')
+        return img_points
