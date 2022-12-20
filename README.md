@@ -30,7 +30,7 @@ python smplifyx/main.py
   --config cfg_files/fit_smal.yaml 
   --data_folder data
   --visualize True 
-  --model_folder MODEL_FILE 
+  --model_folder smplifyx/SMAL.pkl
 ```
 where MODEL_FILE is the full path to smalify-x/smplifyx/SMAL.pkl [here](https://smal.is.tue.mpg.de/download.php)
 
