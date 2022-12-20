@@ -27,7 +27,7 @@ This repository contains the fitting code for the SMALR animal model, optimized 
 Run the following command to execute the code:
 ```Shell
 python smplifyx/main.py 
-  --config cfg_files/fit_smpl.yaml 
+  --config cfg_files/fit_smal.yaml 
   --data_folder DATA_FOLDER
   --visualize True 
   --model_folder MODEL_FILE 
@@ -56,6 +56,6 @@ The LBFGS optimizer with Strong Wolfe Line search is taken from this [Pytorch pu
 We will update the repository once the pull request is merged.
 
 ## Contact
-This project was built upon [SMALR] (https://github.com/silviazuffi/smalr_online) and [SMPLify-X] (https://github.com/vchoutas/smplify-x) by [Egor Iuganov] (mailto:egor.iuganov@ifr.uni-stuttgart.de) from the [Flight Robotics and Perception Group] (https://www.aamirahmad.de/).
+This project was built upon [SMALR](https://github.com/silviazuffi/smalr_online) and [SMPLify-X](https://github.com/vchoutas/smplify-x) by [Egor Iuganov](mailto:egor.iuganov@ifr.uni-stuttgart.de) from the [Flight Robotics and Perception Group](https://www.aamirahmad.de/).
 
 For commercial licensing (and all related questions for business applications), please contact [ps-licensing@tue.mpg.de](mailto:ps-licensing@tue.mpg.de).
