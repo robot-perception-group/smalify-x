@@ -41,6 +41,8 @@ fitting code.
 
 1. [PyTorch](https://pytorch.org/)
 2. [SMPL-X](https://github.com/vchoutas/smplx) dependencies
+3. [pytorch3d](https://pytorch3d.org/)
+4. requirements from the requirements.txt
 
 ### Optional Dependencies
 
