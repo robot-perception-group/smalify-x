@@ -40,8 +40,7 @@ Follow the installation instructions for each of the following before using the
 fitting code.
 
 1. [PyTorch](https://pytorch.org/)
-2. [SMPL-X](https://github.com/vchoutas/smplx)
-3. [Homogenus](https://github.com/nghorbani/homogenus)
+2. [SMPL-X](https://github.com/vchoutas/smplx) dependencies
 
 ### Optional Dependencies
 
