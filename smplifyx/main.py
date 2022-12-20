@@ -6,7 +6,7 @@ import os.path as osp
 import time
 import torch
 import sys
-sys.path.append("/home/frg08/Code/smalify_multiview/smalify-x/")
+sys.path.append(os.path.abspath(os.getcwd()))
 import smplx_smal
 import cv2
 from cmd_parser import parse_config
