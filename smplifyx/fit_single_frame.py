@@ -95,7 +95,9 @@ def fit_single_frame(imgs,
         body_model.reset_params(body_pose=body_mean_pose, betas=betas)
         with torch.no_grad():
             body_model.betas[:] = torch.Tensor([betas])
-            body_model.global_orient = torch.nn.Parameter(torch.Tensor([[np.pi/2, 0, 0]]))#[[0, 2.2, -2.2]]))
+            body_model.global_orient = torch.nn.Parameter(torch.Tensor([[1.2,1.2, -1.2]]))#torch.Tensor([[0, 2.2, -2.2]])) #[[0, 2.2, -2.2]]))
+
+
             for camera_i, camera in enumerate(cameras):
                 #camera.translation[:] = torch.Tensor([[0,-10,-10]])#init_t[camera_i].view_as(camera.translation) # !!! enter proper camera translation
                 camera.global_translation[:] = torch.Tensor([[10*(-1)**camera_i,-10,-20]])
@@ -317,3 +319,6 @@ def fit_single_frame(imgs,
             plt.savefig('output/images/'+str(camera_index)+'_keypoints.png',bbox_inches='tight', dpi=387.1, pad_inches=0)
             #img.save(out_img_fn)
         print('Took ', time.time()-vis_start, 'for the visualisation stage')
+
+def log_to_smalify(translation,rotation_euler):
+    return (torch.Tensor([translation[1],translation[2],translation[0]]), torch.Tensor([rotation_euler[2],rotation_euler[1], rotation_euler[0]]))

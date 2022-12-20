@@ -274,6 +274,11 @@ class SMPLifyCameraInitLoss(nn.Module):
         joint_loss = torch.Tensor([0])
         depth_loss = torch.Tensor([0])
         cam_pose_loss = torch.Tensor([0])
+
+        animal_R = transforms.axis_angle_to_matrix(body_model_output.global_orient)        
+        animal_euler = transforms.matrix_to_euler_angles(animal_R,convention="YXZ")   
+             
+
         for camera_index, camera in enumerate(cameras):
             landmarks = np.array(torch.unsqueeze(torch.hstack([gt_joints[camera_index][0], joints_conf[camera_index].t()]), 0))
             visible = landmarks[i][:, 2].astype(bool)
