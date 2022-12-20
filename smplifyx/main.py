@@ -5,7 +5,9 @@ import os
 import os.path as osp
 import time
 import torch
-import smplx
+import sys
+sys.path.append("/home/frg08/Code/smalify_multiview/smalify-x/")
+import smplx_smal
 import cv2
 from cmd_parser import parse_config
 from data_parser import create_dataset
@@ -21,17 +23,14 @@ def main(**args):
     dataset_obj = create_dataset(**args)
     start = time.time()
     betas = torch.Tensor([[float(el) for el in args['zebra_betas']]])
-
-    print("hello")
-
     model_params = dict(model_path=args.get('model_folder'),
-                        create_global_orient=True,
+                        create_global_orient=not args.get('use_yaw'), 
                         create_body_pose=not args.get('use_vposer'),
                         create_betas=True,
                         create_transl=True,
                         betas=betas,
                         **args)
-    body_model = smplx.create(**model_params)
+    body_model = smplx_smal.create(**model_params)
     cameras = []
     num_cameras = len(dataset_obj[0]["cam_names"][0])
     for el in range(num_cameras):
@@ -51,15 +50,24 @@ def main(**args):
     for idx, data in enumerate(dataset_obj):
         imgs = data['imgs'][0]
         keypoints = data['keypoints'][0]
+        cam_poses = data['cam_poses'][0]
         img_scaled_w = 1280
         img_scaling_factor = imgs[0].shape[1] / img_scaled_w
         img_scaled_h = round(imgs[0].shape[0] / img_scaling_factor)
+
+        
+        
 
 
         for i, _ in enumerate(imgs):
             imgs[i] = cv2.resize(imgs[i], dsize=(img_scaled_w, img_scaled_h), interpolation=cv2.INTER_CUBIC)
             keypoints[i][0][:,:2] = keypoints[i][0][:,:2] / img_scaling_factor
         snapshot_name = data['snapshot_name']# osp.split(osp.split(data['img_paths'][0][0])[0])[-1]
+        #if int(data['snapshot_name'])<36470:
+        #    continue
+        #if int(data['snapshot_name'])>36530:
+        #    break
+        curr_image_folder = osp.join(output_folder, "images/", snapshot_name)
         print('Processing: {}'.format(snapshot_name))
         curr_result_folder = osp.join(result_folder, snapshot_name)
         if not osp.exists(curr_result_folder):
@@ -67,21 +75,19 @@ def main(**args):
         curr_mesh_folder = osp.join(mesh_folder, snapshot_name)
         if not osp.exists(curr_mesh_folder):
             os.makedirs(curr_mesh_folder)
-
-
+        if not osp.exists(curr_image_folder):
+            os.makedirs(curr_image_folder)
         curr_result_fn = osp.join(curr_result_folder,'output.pkl')
-        curr_mesh_fn = osp.join(curr_mesh_folder,'output.obj')
-        '''curr_img_folder = osp.join(output_folder, 'images', fn,'{:03d}'.format(person_id))
-        if not osp.exists(curr_img_folder):
-            os.makedirs(curr_img_folder)
-        out_img_fn = osp.join(curr_img_folder, 'output.png')'''
+        curr_mesh_fn = osp.join(mesh_folder,'out_mesh_'+snapshot_name+'.obj')  #osp.join(curr_mesh_folder,'output.obj')
 
-        fit_single_frame(imgs, keypoints,
+
+        fit_single_frame(imgs, keypoints, cam_poses,
                          body_model=body_model,
                          cameras=cameras,
                          result_folder=curr_result_folder,
                          result_fn=curr_result_fn,
                          mesh_fn=curr_mesh_fn,
+                         image_dir = curr_image_folder,
                          shape_prior=shape_prior,
                          body_pose_prior=body_pose_prior,
                          angle_prior=angle_prior,

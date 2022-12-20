@@ -48,6 +48,10 @@ def create_dataset(dataset='openpose', data_folder='data', **kwargs):
         return OpenPose(data_folder, **kwargs)
     elif dataset.lower() == 'animal':
         return AnimalData(data_folder)
+    elif dataset.lower() == 'video_animal':
+        return VideoAnimalData(data_folder)
+    elif dataset.lower() == 'image_animal':
+        return ImageAnimalData(data_folder)
     else:
         raise ValueError('Unknown dataset: {}'.format(dataset))
 
@@ -167,14 +171,14 @@ class AnimalData(Dataset):
         img_dir_path = self.img_dir_paths[self.cnt]
         self.cnt += 1
         return self.read_item(img_dir_path)
+        
 
-'''class AnimalData(Dataset):
+class VideoAnimalData(Dataset):
     # returns data for one timestamp (images, keypoints)
-    def __init__(self, data_folder, img_folder='images',
-                 keyp_folder='keypoints',
+    def __init__(self, data_folder,
                  fps=30,
                  dtype=torch.float32):
-        super(AnimalData, self).__init__()
+        super(VideoAnimalData, self).__init__()
 
         self.data_folder = data_folder
         self.vid_paths = [osp.join(self.data_folder, vid_fn) for vid_fn in os.listdir(self.data_folder) if vid_fn.endswith('.MP4')]
@@ -182,11 +186,17 @@ class AnimalData(Dataset):
         self.vidcaps = [cv2.VideoCapture(vid_path) for vid_path in self.vid_paths]
         self.cam_names = [vid_path.split('.')[-2].split('/')[-1] for vid_path in self.vid_paths]
 
-        self.kp_paths = [vidpath.split('.')[-1]+'.json' for vidpath in self.vidpaths]
+        self.kp_paths = [vid_path.split('.')[-2]+'.json' for vid_path in self.vid_paths]
         self.kps = []
         for kp_path in self.kp_paths:
             with open(kp_path, 'r') as f:
                 self.kps.append(json.load(f))
+
+        self.pose_paths = [vid_path.split('.')[-2]+'_pose.json' for vid_path in self.vid_paths]
+        self.poses = []
+        for pose_path in self.pose_paths:
+            with open(pose_path, 'r') as f:
+                self.poses.append(json.load(f))
 
         self.cnt = 0
 
@@ -194,27 +204,28 @@ class AnimalData(Dataset):
         return len(self.kps[0])
 
     def __getitem__(self, idx):
-        img_dir_path = self.img_dir_paths[idx]
-        return self.read_item(img_dir_path)
+        timestamp = list(self.kps[0].keys())[idx]
+        return self.read_item(timestamp)
 
     def read_item(self, timestamp):
         keypoints = []
+        poses = []
         imgs = []
-
-        for vidcap, kp in zip(self.vidcaps, self.kps):
-            vidcap.set(cv2.CAP_PROP_POS_MSEC, timestamp*1000/30)
+        for vidcap, kp, pose in zip(self.vidcaps, self.kps, self.poses):
+            vidcap.set(cv2.CAP_PROP_POS_MSEC, float(timestamp)*1000/30)
             success,image = vidcap.read()
             if not success:
                 break
-            im = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+            #im = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+            im = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) 
+            im = cv2.resize(im, (1280,720)) / 255.0
             imgs.append(im)
-
-            keypoints.append(kp[str(timestamp)])
-
-
+            keypoints.append(np.array([kp[timestamp]['zebra_0']]))
+            poses.append(np.array([[float(el) for el in pose[timestamp]]]))
         output_dict = {'cam_names': [self.cam_names],
                         'snapshot_name': timestamp,
                         'keypoints': [keypoints],
+                        'cam_poses': [poses],
                         'imgs': [imgs]}
         return output_dict
 
@@ -224,6 +235,69 @@ class AnimalData(Dataset):
     def __next__(self):
         if self.cnt >= len(self.kps[0]):
             raise StopIteration
-        timestamp = self.kps[0][self.cnt]
+        timestamp =list(self.kps[0].keys())[self.cnt]
         self.cnt += 1
-        return self.read_item(timestamp)'''
+        return self.read_item(timestamp)
+
+
+
+class ImageAnimalData(Dataset):
+    def __init__(self, data_folder,
+                 fps=30,
+                 dtype=torch.float32):
+        super(ImageAnimalData, self).__init__()
+
+        self.data_folder = data_folder
+        self.cam_names = os.listdir(osp.join(self.data_folder, "images/"))
+        self.cam_names = sorted(self.cam_names)
+        #self.vid_paths = sorted(self.vid_paths)
+        #self.cam_names = [vid_path.split('/')[-1] for vid_path in self.vid_paths]
+
+        self.kp_paths = [osp.join(self.data_folder, cam_name+".json") for cam_name in self.cam_names]
+        self.kps = []
+        for kp_path in self.kp_paths:
+            with open(kp_path, 'r') as f:
+                self.kps.append(json.load(f))
+
+        self.pose_paths = [osp.join(self.data_folder, cam_name+"_pose.json") for cam_name in self.cam_names]
+        self.poses = []
+        for pose_path in self.pose_paths:
+            with open(pose_path, 'r') as f:
+                self.poses.append(json.load(f))
+
+        self.cnt = 0
+
+    def __len__(self):
+        return len(self.kps[0])
+
+    def __getitem__(self, idx):
+        timestamp = list(self.kps[0].keys())[idx]
+        return self.read_item(timestamp)
+
+    def read_item(self, timestamp):
+        keypoints = []
+        poses = []
+        imgs = []
+        for cam_name, kp, pose in zip(self.cam_names, self.kps, self.poses):
+            image = cv2.imread(osp.join(self.data_folder, "images/", cam_name, str(timestamp)+".jpg"))
+            im = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) 
+            im = cv2.resize(im, (1280,720)) / 255.0
+            imgs.append(im)
+            keypoints.append(np.array([kp[timestamp]['zebra_0']]))
+            poses.append(np.array([[float(el) for el in pose[timestamp]]]))
+        output_dict = {'cam_names': [self.cam_names],
+                        'snapshot_name': timestamp,
+                        'keypoints': [keypoints],
+                        'cam_poses': [poses],
+                        'imgs': [imgs]}
+        return output_dict
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.cnt >= len(self.kps[0]):
+            raise StopIteration
+        timestamp =list(self.kps[0].keys())[self.cnt]
+        self.cnt += 1
+        return self.read_item(timestamp)

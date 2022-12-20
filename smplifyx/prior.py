@@ -94,19 +94,6 @@ class SMPLifyAnglePrior(nn.Module):
         return torch.exp(pose[:, angle_prior_idxs] *
                          self.angle_prior_signs).pow(2)
 
-# °°°°°°°
-'''class L2PriorShape(nn.Module):
-    def __init__(self, dtype=DEFAULT_DTYPE, reduction='sum', **kwargs):
-        super(L2PriorShape, self).__init__()
-        shape_prior = MultiShapePrior(family_name='horse', data_name='smplifyx/smal_data_00781_4_all.pkl')
-        self.register_buffer('animal_betas', torch.tensor(shape_prior.mu, dtype=dtype))
-        animal_betas = getattr(self, 'animal_betas')
-        #print('°°°°°°° animal_betas \n', animal_betas)
-        #body_model.betas[:] = torch.from_numpy(shape_prior.mu).to(device)
-
-    def forward(self, module_input, *args):
-        animal_betas = getattr(self, 'animal_betas')
-        return torch.sum((module_input-animal_betas).pow(2))'''
 
 class MahalanobisShapePrior(nn.Module):
     def __init__(self, family_name='horse', data_name='smal_data_00781_4_all.pkl', dtype=DEFAULT_DTYPE, reduction='sum', **kwargs):

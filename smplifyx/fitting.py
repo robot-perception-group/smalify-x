@@ -7,6 +7,7 @@ import torch.nn as nn
 from mesh_viewer import MeshViewer
 import utils
 import itertools
+from pytorch3d import transforms
 
 @torch.no_grad()
 def guess_init(model,
@@ -90,8 +91,6 @@ class FittingMonitor(object):
                                gt_joints=None, loss=None,
                                joints_conf=None,
                                return_verts=True, return_full_pose=False,
-                               use_vposer=False, vposer=None,
-                               pose_embedding=None,
                                create_graph=False,
                                **kwargs):
         faces_tensor = body_model.faces_tensor.view(-1)
@@ -234,13 +233,6 @@ class SMPLifyCameraInitLoss(nn.Module):
         self.cam_pose_prior = cam_pose_prior
         self.losses_log = []
 
-        if trans_estimations is not None:
-            self.register_buffer(
-                'trans_estimations',
-                utils.to_tensor(trans_estimations, dtype=dtype))
-        else:
-            self.trans_estimations = trans_estimations
-
         if cam_prior_poses is not None:
             self.register_buffer(
                 'cam_prior_poses',
@@ -274,11 +266,6 @@ class SMPLifyCameraInitLoss(nn.Module):
         joint_loss = torch.Tensor([0])
         depth_loss = torch.Tensor([0])
         cam_pose_loss = torch.Tensor([0])
-
-        animal_R = transforms.axis_angle_to_matrix(body_model_output.global_orient)        
-        animal_euler = transforms.matrix_to_euler_angles(animal_R,convention="YXZ")   
-             
-
         for camera_index, camera in enumerate(cameras):
             landmarks = np.array(torch.unsqueeze(torch.hstack([gt_joints[camera_index][0], joints_conf[camera_index].t()]), 0))
             visible = landmarks[i][:, 2].astype(bool)
@@ -301,7 +288,8 @@ class SMPLifyCameraInitLoss(nn.Module):
             #cam_pose_loss += self.cam_pose_prior(camera.translation - self.cam_prior_poses[camera_index][:3]) * self.cam_pose_weight ** 2
             joint_loss += torch.square(self.data_weight) * torch.sum(torch.square(kp_proj))
             # is the index 2 correct??
-            #depth_loss += self.depth_loss_weight ** 2 * torch.sum((camera.translation[:, 2] - self.trans_estimations[camera_index][:, 2]).pow(2))
             self.losses_log.append(joint_loss.detach().tolist()[0])
             #print(self.losses_log)
         return joint_loss #+ depth_loss #+ cam_pose_loss
+
+

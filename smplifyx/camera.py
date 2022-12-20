@@ -18,15 +18,10 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
-
 from collections import namedtuple
-
 import torch
 import torch.nn as nn
-
 from smplx.lbs import transform_mat
-
-
 from smplx.lbs import batch_rodrigues
 
 PerspParams = namedtuple('ModelOutput',
@@ -89,36 +84,24 @@ class PerspectiveCamera(nn.Module):
         translation = -torch.matmul(self.rotation,self.global_translation.T).T # check!!
         self.register_buffer('translation', translation)
 
-
-
         '''if translation is None:
             translation = torch.zeros([batch_size, 3], dtype=dtype)
         translation = nn.Parameter(translation, requires_grad=True)
         self.register_parameter('translation', translation)'''
 
 
-
-
-
         intrinsic = torch.Tensor([[focal_length_x, 0, center[0, 0]], [0, focal_length_y, center[0, 1]], [0, 0, 1]])
-        # intrinsic = nn.Parameter([[focal_length_x, 0, center[0,0]], [0, focal_length_y, center[0,1]], [0, 0, 1]])
         self.register_buffer('intrinsic', intrinsic)
 
-        #print("I am Nitin's camera")
 
     def forward(self, points):
 
         self.intrinsic = torch.Tensor([[self.focal_length_x, 0, self.center[0, 0]], [0, self.focal_length_y, self.center[0, 1]], [0, 0, 1]])
-
         self.rotation = batch_rodrigues(torch.unsqueeze(self.rotation_aa, 0))
         self.translation = -torch.matmul(self.rotation,self.global_translation.T).T
         extr_intr_mul = torch.matmul(self.intrinsic, torch.cat((self.rotation[0], self.translation.view(3, -1)), dim=1))
-
-        # points2d = torch.matmul(extr_intr_mul[:3, :3], points.unsqueeze(-1)).squeeze(-1) + extr_intr_mul[:, 3]
         hom_points = torch.cat((points[0], torch.Tensor([1.0] * len(points[0])).unsqueeze(-1)), dim=1)
         points2d = torch.matmul(extr_intr_mul, hom_points.T).T
-
-        #print(self.global_translation, self.translation)
 
 
         return (points2d[:, :2] / points2d[:, 2:3]).unsqueeze(dim=0)  # + self.center.unsqueeze(dim=1)

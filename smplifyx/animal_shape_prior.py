@@ -9,8 +9,6 @@ class MultiShapePrior(object):
     def __init__(self, family_name='tiger', data_name=''):
         print('Using shape data %s' % data_name)
         data_path = join('./', data_name)
-        print(data_path)
-        print('°°°°°°° sdfkj ',os.getcwd())
            
         with open(data_path, 'rb') as f:
             data = pkl.load(f, encoding='latin1')
