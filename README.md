@@ -28,11 +28,11 @@ Run the following command to execute the code:
 ```Shell
 python smplifyx/main.py 
   --config cfg_files/fit_smal.yaml 
-  --data_folder DATA_FOLDER
+  --data_folder data
   --visualize True 
   --model_folder MODEL_FILE 
 ```
-where the `DATA_FOLDER` should contain video files, e.g. cam1.mp4, cam2.mp4 etc, animal keypoint files, e.g. cam1.json, and camera pose files, e.g. cam1_pose.json. The model file is the SMAL model, e.g. models/SMAL.pkl. You can download the SMAL model [here] (https://smal.is.tue.mpg.de/download.php)
+where MODEL_FILE is the full path to smalify-x/smplifyx/SMAL.pkl [here](https://smal.is.tue.mpg.de/download.php)
 
 ## Dependencies
 
