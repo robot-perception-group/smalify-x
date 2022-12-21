@@ -11,4 +11,3 @@ pyrender>=0.1.23
 trimesh>=2.37.6shapely
 matplotlib
 open3d-python
-chumpy
