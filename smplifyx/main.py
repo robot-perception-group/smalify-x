@@ -62,32 +62,27 @@ def main(**args):
         for i, _ in enumerate(imgs):
             imgs[i] = cv2.resize(imgs[i], dsize=(img_scaled_w, img_scaled_h), interpolation=cv2.INTER_CUBIC)
             keypoints[i][0][:,:2] = keypoints[i][0][:,:2] / img_scaling_factor
-        snapshot_name = data['snapshot_name']# osp.split(osp.split(data['img_paths'][0][0])[0])[-1]
+        snapshot_name = data['snapshot_name']
         #if int(data['snapshot_name'])<36470:
         #    continue
         #if int(data['snapshot_name'])>36530:
         #    break
         curr_image_folder = osp.join(output_folder, "images/", snapshot_name)
         print('Processing: {}'.format(snapshot_name))
-        curr_result_folder = osp.join(result_folder, snapshot_name)
-        if not osp.exists(curr_result_folder):
-            os.makedirs(curr_result_folder)
-        curr_mesh_folder = osp.join(mesh_folder, snapshot_name)
-        if not osp.exists(curr_mesh_folder):
-            os.makedirs(curr_mesh_folder)
+        #curr_result_folder = osp.join(result_folder, snapshot_name)
+        if not osp.exists(result_folder):
+            os.makedirs(result_folder)
+        if not osp.exists(mesh_folder):
+            os.makedirs(mesh_folder)
         if not osp.exists(curr_image_folder):
             os.makedirs(curr_image_folder)
-        curr_result_fn = osp.join(curr_result_folder,'output.pkl')
-        curr_mesh_fn = osp.join(mesh_folder,'out_mesh_'+snapshot_name+'.obj')  #osp.join(curr_mesh_folder,'output.obj')
 
 
         fit_single_frame(imgs, keypoints, cam_poses,
                          body_model=body_model,
                          cameras=cameras,
-                         result_folder=curr_result_folder,
-                         result_fn=curr_result_fn,
-                         mesh_fn=curr_mesh_fn,
-                         image_dir = curr_image_folder,
+                         snapshot_name=snapshot_name,
+                         output_dir=output_folder,
                          shape_prior=shape_prior,
                          body_pose_prior=body_pose_prior,
                          angle_prior=angle_prior,

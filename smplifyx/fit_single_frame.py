@@ -32,8 +32,8 @@ def fit_single_frame(imgs,
                      angle_prior,
                      cam_pose_prior,
                      betas,
-                     mesh_fn='out.obj',
-                     image_dir='output/0/',
+                     output_dir,
+                     snapshot_name,
                      loss_type='smplify',
                      depth_loss_weight=1e2,
                      save_meshes=True,
@@ -279,12 +279,13 @@ def fit_single_frame(imgs,
         rot = trimesh.transformations.rotation_matrix(
             np.radians(180), [1, 0, 0])
         out_mesh.apply_transform(rot)
+        mesh_fn = osp.join(output_dir,'meshes/'+'out_mesh_'+snapshot_name+'.obj')
         out_mesh.export(mesh_fn)
 
         mesh_dict = {}
         mesh_dict['vertices'] = vertices.tolist()
         mesh_dict['faces'] = body_model.faces.tolist()
-        with open(mesh_fn+'_dict.json', 'w') as fp:
+        with open(mesh_fn.split(".")[-2]+".json", 'w') as fp:
             json.dump(mesh_dict, fp)
 
 
@@ -318,7 +319,7 @@ def fit_single_frame(imgs,
             cam_param_dict['translation'] = (-R.T@t).tolist()
             cam_param_dict['rotation'] = (R.T).tolist()
 
-            with open(mesh_fn + '_' + str(camera_index) + '_cam_dict.json', 'w') as fp:
+            with open(osp.join(output_dir,"results/","cam_pose_"+snapshot_name+"_"+str(camera_index)+".json"), 'w') as fp:
                 json.dump(cam_param_dict, fp)
 
             #model_output = body_model(return_verts=True)
@@ -352,6 +353,7 @@ def fit_single_frame(imgs,
             plt.axis('off')
             plt.show()
             #plt.savefig(out_img_fn+'_cam_'+str(camera_index)+'_keypoints.png',bbox_inches='tight', dpi=387.1, pad_inches=0)
+            image_dir = osp.join(output_dir, "images/",snapshot_name+"/")
             plt.savefig(osp.join(image_dir,str(camera_index)+'_keypoints.png'),bbox_inches='tight', dpi=387.1, pad_inches=0)
             #img.save(out_img_fn)
         print('Took ', time.time()-vis_start, 'for the visualisation stage')

@@ -49,7 +49,10 @@ class FittingMonitor(object):
     def __enter__(self):
         self.steps = 0
         if self.visualize:
-            self.mv = MeshViewer(body_color=self.body_color)
+            camera_pose = np.eye(4)
+            camera_pose[:3, 3] = np.array([5, 0, 0])
+            camera_pose[:3,:3] = np.array([[-0.0, 0, -1.0], [0, 1, 0], [1.0, 0, -0.0]])
+            self.mv = MeshViewer(body_color=self.body_color, camera_pose=camera_pose)
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):

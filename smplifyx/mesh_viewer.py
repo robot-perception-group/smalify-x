@@ -27,7 +27,8 @@ class MeshViewer(object):
 
     def __init__(self, width=1200, height=800,
                  body_color=(1.0, 1.0, 0.9, 1.0),
-                 registered_keys=None):
+                 registered_keys=None,
+                 camera_pose=np.eye(4)):
         super(MeshViewer, self).__init__()
 
         if registered_keys is None:
@@ -47,8 +48,8 @@ class MeshViewer(object):
 
         pc = pyrender.PerspectiveCamera(yfov=np.pi / 3.0,
                                         aspectRatio=float(width) / height)
-        camera_pose = np.eye(4)
-        camera_pose[:3, 3] = np.array([0, 0, 3])
+        #camera_pose = np.eye(4)
+        #camera_pose[:3, 3] = np.array([0, 0, 3])
         self.scene.add(pc, pose=camera_pose)
 
         self.viewer = pyrender.Viewer(self.scene, use_raymond_lighting=True,
