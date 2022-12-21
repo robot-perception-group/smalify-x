@@ -17,6 +17,8 @@ import PIL.Image as pil_img
 from optimizers import optim_factory
 import fitting
 import json
+import sys, os
+sys.path.append(os.path.abspath(os.getcwd())+"/pytorch3d/")
 from pytorch3d import transforms
 import os.path as osp
 
@@ -356,4 +358,3 @@ def fit_single_frame(imgs,
 
 def log_to_smalify(translation,rotation_euler):
     return (torch.Tensor([translation[1],translation[2],translation[0]]), torch.Tensor([rotation_euler[2],rotation_euler[1], rotation_euler[0]]))
-

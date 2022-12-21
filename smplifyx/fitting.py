@@ -7,7 +7,6 @@ import torch.nn as nn
 from mesh_viewer import MeshViewer
 import utils
 import itertools
-from pytorch3d import transforms
 
 @torch.no_grad()
 def guess_init(model,

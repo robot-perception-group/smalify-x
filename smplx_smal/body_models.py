@@ -38,6 +38,8 @@ from .utils import (
     FLAMEOutput,
     find_joint_kin_chain)
 from .vertex_joint_selector import VertexJointSelector
+import sys
+sys.path.append(os.path.abspath(os.getcwd())+"/pytorch3d/")
 from pytorch3d import transforms
 
 

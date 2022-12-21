@@ -1,7 +1,7 @@
 from os.path import join, exists
 import pickle as pkl
 import numpy as np
-import chumpy as ch
+#import chumpy as ch
 import os
 
 class MultiShapePrior(object):
