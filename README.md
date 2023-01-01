@@ -45,6 +45,7 @@ To use your data, create data structure is as follows:
  - cam_name_pose.json contains camera pose
  - images/ folder contains corresponding images
  - optional: instead of the images/ folder a video can be provided, e.g. cam_name.mp4; if using this option, change dataset field to 'video_animal' in cfg_files/fit_smal.yml
+
  In the json files, image names correspond to frame number in videos. An example is provided in the demo files.
 
 ## Dependencies
