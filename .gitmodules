@@ -1,3 +1,6 @@
 [submodule "pytorch3d"]
 	path = pytorch3d
 	url = https://github.com/facebookresearch/pytorch3d.git
+[submodule "smalr_online"]
+	path = smalr_online
+	url = https://github.com/silviazuffi/smalr_online.git

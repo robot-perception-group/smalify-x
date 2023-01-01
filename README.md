@@ -24,7 +24,14 @@ Please read carefully the [terms and conditions](https://github.com/vchoutas/smp
 This repository contains the fitting code for the SMALR animal model, optimized for data collected from drones.
 
 ### Fitting 
-Run the following command to execute the code:
+Run the SMAL model patch:
+```Shell
+cd smplifyx
+python model_patch.py
+cd ..
+```
+
+To run a demo, run the following command:
 ```Shell
 python smplifyx/main.py \
   --config cfg_files/fit_smal.yaml \
@@ -32,7 +39,13 @@ python smplifyx/main.py \
   --visualize True \
   --model_folder smplifyx/SMAL.pkl \
 ```
-where MODEL_FILE is the full path to smalify-x/smplifyx/SMAL.pkl [here](https://smal.is.tue.mpg.de/download.php)
+
+To use your data, create data structure is as follows:
+ - cam_name.json contains keypoints observed from the camera
+ - cam_name_pose.json contains camera pose
+ - images/ folder contains corresponding images
+ - optional: instead of the images/ folder a video can be provided, e.g. cam_name.mp4; if using this option, change dataset field to 'video_animal' in cfg_files/fit_smal.yml
+ In the json files, image names correspond to frame number in videos. An example is provided in the demo files.
 
 ## Dependencies
 
