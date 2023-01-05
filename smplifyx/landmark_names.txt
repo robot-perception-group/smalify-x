@@ -1,0 +1,5 @@
+'leftEye','rightEye','chin','frontLeftFoot','frontRightFoot','backLeftFoot','backRightFoot',
+'tailStart','frontLeftKnee','backLeftKnee','backRightKnee','leftShoulder','rightShoulder',
+'frontLeftAnkle','frontRightAnkle','backLeftAnkle','backRightAnkle','neck','TailTip','leftEar',
+'rightEar','nostrilLeft','nostrilRight','mouthLeft','mouthRight','cheekLeft','cheekRight',
+'mane','back','croup'

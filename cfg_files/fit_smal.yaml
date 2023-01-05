@@ -2,7 +2,7 @@ dataset: 'image_animal'
 data_folder: "data"
 prior_folder: 'priors'
 #model_folder: '/home/frg08/Code/smplify-x/smpl/models/SMAL.pkl'
-model_folder: '/home/frg08/Code/smalify_multiview/smalify-x/smplifyx/SMAL.pkl'
+#model_folder: '/home/frg08/Code/smalify_multiview/smalify-x/smplifyx/SMAL.pkl'
 model_type: 'smpl'
 use_cuda: False
 use_joints_conf: True
