@@ -4,13 +4,12 @@
 [[Paper](https://ps.is.tuebingen.mpg.de/uploads_file/attachment/attachment/497/SMPL-X.pdf)]
 [[Supp. Mat.](https://ps.is.tuebingen.mpg.de/uploads_file/attachment/attachment/498/SMPL-X-supp.pdf)]
 
-![SMPL-X Examples](./images/teaser_fig.png)
+![SMAL Example](./images/teaser_fig.png)
 
 ## Table of Contents
   * [License](#license)
   * [Description](#description)
-  * [Dependencies](#dependencies)
-  * [Citation](#citation)
+  * [Usage](#usage)
   * [Contact](#contact)
 
 
@@ -21,42 +20,78 @@ Please read carefully the [terms and conditions](https://github.com/vchoutas/smp
 
 ## Description
 
-This repository contains the fitting code for the SMALR animal model, optimized for data collected from drones.
+This repository contains fitting code for the SMAL animal model, optimized for data collected from drones. Unlike [SMALR](https://github.com/silviazuffi/smalr_online), it uses pytorch instead of chumpy, in analogy with [SMPLify-x](https://github.com/vchoutas/smplify-x). This makes optimization significantly more efficient. The code mostly follows the structure of [SMPLify-x](https://github.com/vchoutas/smplify-x). In this pipeline, however, it is assumed that camera extrinsics and intrinsics are known, and that animals are located close to the ground plane. Animal pose is then estimated in the coodinate frame of the cameras. Cameras are expected to look towards the ground, as is usually the case with drone footage. Functionality for multiview pose estimation is present but requires additional tweaking. This repository is a part of a project "Animal Pose Estimation with UAVs" described in [this video](https://www.youtube.com/watch?v=EiarAs1s7wg&ab_channel=AamirAhmad).
 
-### Fitting 
-Run the SMAL model patch:
+## Usage
+
+### Dependencies and Setup
+
+ - Clone this repository with its submodules
+ - Install the following dependencies:
+    1. [PyTorch](https://pytorch.org/)
+    2. [SMPL-X](https://github.com/vchoutas/smplx) dependencies
+    3. [pytorch3d](https://pytorch3d.org/)
+    4. pip install -r requirements.txt
+ - The original SMAL .pkl file contains data structures defined in chumpy library. We provide a patch to eliminate this dependency: 
 ```Shell
 cd smplifyx
 python model_patch.py
 cd ..
 ```
 
-To run a demo, run the following command:
+### Fitting 
+
+To run a demo, use the following command:
 ```Shell
 python smplifyx/main.py \
   --config cfg_files/fit_smal.yaml \
-  --data_folder data \
+  --data_folder demo_data \
   --visualize True \
   --model_folder smplifyx/SMAL.pkl \
 ```
+The results should appear in the output folder. Meshes can be visualised, for example, in Blender:
+![Mesh Example](./images/mesh_example.png)
 
-To use your data, create data structure is as follows:
- - cam_name.json contains keypoints observed from the camera
- - cam_name_pose.json contains camera pose
- - images/ folder contains corresponding images
- - optional: instead of the images/ folder a video can be provided, e.g. cam_name.mp4; if using this option, change dataset field to 'video_animal' in cfg_files/fit_smal.yml
 
- In the json files, image names correspond to frame number in videos. An example is provided in the demo files.
+### Using your own data
+To run optimization on your own data, create the data structure as follows: 
+ - cam_name.json with keypoints observed from the camera
+ - cam_name_pose.json with camera pose
+ - images/ folder with corresponding images
+ 
+ In the json files, image names correspond to frame numbers in videos. For each keypoint, 3 numbers are provided: its 2D coordinates in the image and its presence. Presence takes values 0 or 1 and indicating whether the keypoint should be used for fitting. The keypoints should be provided in the following order:
+ - left eye
+ - right eye
+ - chin
+ - front left foot
+ - front right foot
+ - back left foot
+ - back right foot
+ - tail start
+ - front left knee
+ - back left knee
+ - back right knee
+ - left shoulder
+ - right shoulder
+ - front left ankle
+ - front right ankle
+ - back left ankle
+ - back right ankle
+ - neck
+ - tail tip
+ - left ear
+ - right ear
+ - left nostril
+ - right nostril
+ - mouth (left side)
+ - mouth (right side)
+ - left cheek
+ - right cheek
+ - mane
+ - back
+ - croup
+  An example is provided in the demo files. Optionally, instead of the images/ folder a video can be provided, e.g. cam_name.mp4. If using this option, change the 'dataset' field to 'video_animal' in the configuration file.
 
-## Dependencies
-
-Follow the installation instructions for each of the following before using the
-fitting code.
-
-1. [PyTorch](https://pytorch.org/)
-2. [SMPL-X](https://github.com/vchoutas/smplx) dependencies
-3. [pytorch3d](https://pytorch3d.org/)
-4. requirements from the requirements.txt
 
 ### Optional Dependencies
 

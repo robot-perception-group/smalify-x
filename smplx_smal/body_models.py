@@ -2420,7 +2420,7 @@ def create(
     else:
         model_type = osp.basename(model_path).split('_')[0].lower()
 
-    if model_type.lower() == 'smpl' or model_type.lower() == 'smal.pkl':
+    if model_type.lower() == 'smpl' or model_type.lower() == 'smal.pkl' or model_type.lower() == 'smal':
         return SMPL(model_path, **kwargs)
     elif model_type.lower() == 'smplh':
         return SMPLH(model_path, **kwargs)
