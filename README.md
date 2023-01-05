@@ -59,38 +59,9 @@ To run optimization on your own data, create the data structure as follows:
  - cam_name_pose.json with camera pose
  - images/ folder with corresponding images
  
- In the json files, image names correspond to frame numbers in videos. For each keypoint, 3 numbers are provided: its 2D coordinates in the image and its presence. Presence takes values 0 or 1 and indicating whether the keypoint should be used for fitting. The keypoints should be provided in the following order:
- - left eye
- - right eye
- - chin
- - front left foot
- - front right foot
- - back left foot
- - back right foot
- - tail start
- - front left knee
- - back left knee
- - back right knee
- - left shoulder
- - right shoulder
- - front left ankle
- - front right ankle
- - back left ankle
- - back right ankle
- - neck
- - tail tip
- - left ear
- - right ear
- - left nostril
- - right nostril
- - mouth (left side)
- - mouth (right side)
- - left cheek
- - right cheek
- - mane
- - back
- - croup
-  An example is provided in the demo files. Optionally, instead of the images/ folder a video can be provided, e.g. cam_name.mp4. If using this option, change the 'dataset' field to 'video_animal' in the configuration file.
+ In the json files, image names correspond to frame numbers in videos. For each keypoint, 3 numbers are provided: the keypoint's 2D coordinates in the image plane and its presence. Presence takes values 0 or 1 and indicates whether the keypoint should be used for fitting. The list of keypoints and their order is provided in [this file](./smplifyx/landmark_names.txt).
+
+An data example is provided in the demo_data directory. Optionally, instead of the images/ folder a video can be provided, e.g. cam_name.mp4. If using this option, please change the 'dataset' field to 'video_animal' in the configuration file.
 
 
 ### Optional Dependencies

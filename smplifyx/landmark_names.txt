@@ -1,5 +1,30 @@
-'leftEye','rightEye','chin','frontLeftFoot','frontRightFoot','backLeftFoot','backRightFoot',
-'tailStart','frontLeftKnee','backLeftKnee','backRightKnee','leftShoulder','rightShoulder',
-'frontLeftAnkle','frontRightAnkle','backLeftAnkle','backRightAnkle','neck','TailTip','leftEar',
-'rightEar','nostrilLeft','nostrilRight','mouthLeft','mouthRight','cheekLeft','cheekRight',
-'mane','back','croup'
+- left eye
+- right eye
+- chin
+- front left foot
+- front right foot
+- back left foot
+- back right foot
+- tail start
+- front left knee
+- back left knee
+- back right knee
+- left shoulder
+- right shoulder
+- front left ankle
+- front right ankle
+- back left ankle
+- back right ankle
+- neck
+- tail tip
+- left ear
+- right ear
+- left nostril
+- right nostril
+- mouth (left side)
+- mouth (right side)
+- left cheek
+- right cheek
+- mane
+- back
+- croup
