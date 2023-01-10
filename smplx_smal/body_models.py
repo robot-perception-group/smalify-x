@@ -153,8 +153,8 @@ class SMPL(nn.Module):
 
         shapedirs = data_struct.shapedirs
         if (shapedirs.shape[-1] < self.SHAPE_SPACE_DIM):
-            print(f'WARNING: You are using a {self.name()} model, with only'
-                  ' 10 shape coefficients.')
+            #print(f'WARNING: You are using a {self.name()} model, with only'
+            #      ' 10 shape coefficients.')
             num_betas = min(num_betas, 41) #°°°°° 10)
         else:
             num_betas = min(num_betas, self.SHAPE_SPACE_DIM)
@@ -220,7 +220,7 @@ class SMPL(nn.Module):
             euler_tensor = self.yaw*torch.Tensor([1,0,0]) + torch.Tensor([yaw,np.pi/2,0])
             animal_rotation_matrix = transforms.euler_angles_to_matrix(euler_tensor, convention="YXZ")
             self.global_orient = transforms.matrix_to_axis_angle(animal_rotation_matrix)
-        print(f"INIT GLOBAL ORIENT: {self.global_orient}")
+        #print(f"INIT GLOBAL ORIENT: {self.global_orient}")
 
         # °°°°° True
         if create_body_pose:
@@ -368,7 +368,7 @@ class SMPL(nn.Module):
             euler_tensor = self.yaw*torch.Tensor([1,0,0]) + torch.Tensor([0,np.pi/2,0])
             animal_rotation_matrix = transforms.euler_angles_to_matrix(euler_tensor, convention="YXZ")
             global_orient = transforms.matrix_to_axis_angle(animal_rotation_matrix).unsqueeze(dim=0)
-            print("YAW: ",self.yaw)
+            #print("YAW: ",self.yaw)
         else:
             global_orient = (global_orient if global_orient is not None else self.global_orient)
         #print("GLOBAL ORIENT: ",global_orient)

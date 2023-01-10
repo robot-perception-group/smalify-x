@@ -1,8 +1,6 @@
-dataset: 'image_animal'
+dataset: 'video_animal'
 data_folder: "data"
 prior_folder: 'priors'
-#model_folder: '/home/frg08/Code/smplify-x/smpl/models/SMAL.pkl'
-#model_folder: '/home/frg08/Code/smalify_multiview/smalify-x/smplifyx/SMAL.pkl'
 model_type: 'smpl'
 use_cuda: False
 use_joints_conf: True
@@ -31,19 +29,19 @@ max_collisions: 128
 optim_type: 'adam'
 ftol: 1e-9
 gtol: 1e-9
-lr: 0.01 # °°°°°° 1.0
+lr: 0.03 # °°°°°° 1.0
 # Max number of optimization iterations
 maxiters: 50 #°°°°°° 30
 interactive: True
 visualize: True
 
 data_weights:
-    - 1.5e3
+    - 5.0e2
 #    - 1.5e3
 #    - 1.5e3
 #    - 1.5e3
 body_pose_prior_weights:
-    - 2.0e4
+    - 1.5e3
 #    - 1.6e4
 #    - 1.0e4
 #    - 0.98e4
@@ -52,7 +50,7 @@ shape_weights:
 #    - .9e2
 #    - .7e2
 #    - .6e2
-    - 1e4
+    - 0.5e1
 #    - .9e4
 #    - .7e4
 #    - .6e4
@@ -68,4 +66,4 @@ zebra_betas: [4.01370676e-01, 1.23658677e+00, -8.94257279e-01,
              9.20290504e-02, 5.10690930e-02]
 num_betas: 20
 
-use_yaw: False
+use_yaw: True
