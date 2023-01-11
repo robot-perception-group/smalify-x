@@ -285,7 +285,7 @@ def parse_config(argv=None):
                         help='The tolerance threshold for the function')
     parser.add_argument('--maxiters', type=int, default=100,
                         help='The maximum iterations for the optimization')
-    parser.add_argument('--use_yaw', default=False,
+    parser.add_argument('--yaw_only', default=False,
                         type=lambda arg: arg.lower() in ['true', '1'],
                         help='Use the VAE pose embedding')
 

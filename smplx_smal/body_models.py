@@ -211,9 +211,9 @@ class SMPL(nn.Module):
                                          requires_grad=True)
             self.register_parameter('global_orient', global_orient)
 
-        self.use_yaw = kwargs.get('use_yaw', False)
+        self.yaw_only = kwargs.get('yaw_only', False)
 
-        if self.use_yaw:
+        if self.yaw_only:
             default_yaw = torch.Tensor([2])
             yaw = nn.Parameter(default_yaw,requires_grad=True)
             self.register_parameter('yaw', yaw)
@@ -364,7 +364,7 @@ class SMPL(nn.Module):
         '''
         # If no shape and pose parameters are passed along, then use the
         # ones from the module
-        if self.use_yaw:
+        if self.yaw_only:
             euler_tensor = self.yaw*torch.Tensor([1,0,0]) + torch.Tensor([0,np.pi/2,0])
             animal_rotation_matrix = transforms.euler_angles_to_matrix(euler_tensor, convention="YXZ")
             global_orient = transforms.matrix_to_axis_angle(animal_rotation_matrix).unsqueeze(dim=0)

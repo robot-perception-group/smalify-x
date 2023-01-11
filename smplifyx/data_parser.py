@@ -181,7 +181,7 @@ class VideoAnimalData(Dataset):
         super(VideoAnimalData, self).__init__()
 
         self.data_folder = data_folder
-        self.vid_paths = [osp.join(self.data_folder, vid_fn) for vid_fn in os.listdir(self.data_folder) if vid_fn.endswith('.MP4')]
+        self.vid_paths = [osp.join(self.data_folder, vid_fn) for vid_fn in os.listdir(self.data_folder) if (vid_fn.endswith('.MP4') or vid_fn.endswith('.mp4'))]
         self.vid_paths = sorted(self.vid_paths)
         self.vidcaps = [cv2.VideoCapture(vid_path) for vid_path in self.vid_paths]
         self.cam_names = [vid_path.split('.')[-2].split('/')[-1] for vid_path in self.vid_paths]

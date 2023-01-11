@@ -13,7 +13,7 @@ num_gaussians: 8
 body_prior_type: 'mahalanobis_body_prior'
 left_hand_prior_type: l2
 right_hand_prior_type: l2
-focal_length: 800 #1054 #1436 #4162 # °°°°°°° was 5000
+focal_length: 800
 num_pca_comps: 12
 # The constant for the robust loss function
 rho: 150
@@ -29,9 +29,9 @@ max_collisions: 128
 optim_type: 'adam'
 ftol: 1e-9
 gtol: 1e-9
-lr: 0.03 # °°°°°° 1.0
+lr: 0.03
 # Max number of optimization iterations
-maxiters: 50 #°°°°°° 30
+maxiters: 50
 interactive: True
 visualize: True
 
@@ -46,10 +46,7 @@ body_pose_prior_weights:
 #    - 1.0e4
 #    - 0.98e4
 shape_weights:
-#    - 1e2
-#    - .9e2
-#    - .7e2
-#    - .6e2
+
     - 0.5e1
 #    - .9e4
 #    - .7e4
@@ -66,4 +63,4 @@ zebra_betas: [4.01370676e-01, 1.23658677e+00, -8.94257279e-01,
              9.20290504e-02, 5.10690930e-02]
 num_betas: 20
 
-use_yaw: True
+yaw_only: True

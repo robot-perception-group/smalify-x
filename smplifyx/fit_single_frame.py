@@ -67,7 +67,7 @@ def fit_single_frame(imgs,
                      dtype=torch.float32,
                      **kwargs):
     #assert batch_size == 1, 'PyTorch L-BFGS only supports batch_size == 1'
-    use_yaw = kwargs.get('use_yaw', False)
+    yaw_only = kwargs.get('yaw_only', False)
     device = torch.device('cuda') if use_cuda else torch.device('cpu')
     use_vposer = kwargs.get('use_vposer', True)
     vposer, pose_embedding = [None, ] * 2
@@ -110,7 +110,7 @@ def fit_single_frame(imgs,
         body_model.reset_params(body_pose=body_mean_pose, betas=betas, yaw=torch.Tensor([2]))#, yaw=yaw_init)
         
         with torch.no_grad():
-            if not use_yaw:
+            if not yaw_only:
                 body_model.global_orient = torch.nn.Parameter(torch.Tensor([[1.2,1.2, -1.2]]))
             #body_model.yaw = torch.nn.Parameter(torch.Tensor([np.pi/2]))#torch.Tensor([[0, 2.2, -2.2]])) #[[0, 2.2, -2.2]]))
 
@@ -153,7 +153,7 @@ def fit_single_frame(imgs,
         body_model.transl.requires_grad = True
         camera_opt_params.append(body_model.transl)
         
-        if use_yaw:
+        if yaw_only:
             body_model.yaw.requires_grad = True
             camera_opt_params.append(body_model.yaw)
         else:
@@ -192,9 +192,6 @@ def fit_single_frame(imgs,
 
 
 
-
-
-
         # Step 2: Optimize the full model
         final_loss_val = 0
 
@@ -213,21 +210,22 @@ def fit_single_frame(imgs,
 
         opt_start = time.time()
 
-        #with torch.no_grad():
-        #    body_model.global_orient = torch.nn.Parameter(torch.Tensor([[1.2,1.2, -1.2]]))
-
         new_params = defaultdict(body_pose=body_mean_pose,
                                  betas=betas,
-                                 #global_orient=body_model.global_orient,
-                                 yaw=body_model.yaw,
                                  transl = body_model.transl)
+        if yaw_only:
+            new_params["yaw"] = body_model.yaw
+        else:
+            new_params["global_orient"] = body_model.global_orient
+            
+
         body_model.reset_params(**new_params)
 
         for opt_idx, curr_weights in enumerate(tqdm(opt_weights, desc='Stage')):
 
             body_model.transl.requires_grad = True
             #body_model.betas.requires_grad = True
-            if use_yaw:
+            if yaw_only:
                 body_model.yaw.requires_grad = True
             else:
                 body_model.body_pose.requires_grad = True
@@ -297,8 +295,6 @@ def fit_single_frame(imgs,
         vertices = model_output.vertices.detach().cpu().numpy().squeeze()
         import trimesh
         out_mesh = trimesh.Trimesh(vertices, body_model.faces, process=False)
-        #rot = trimesh.transformations.rotation_matrix(
-        #    np.radians(180), [1, 0, 0])
         rot = trimesh.transformations.rotation_matrix(np.radians(90), [0, 1, 0])
         out_mesh.apply_transform(rot)
         mesh_fn = osp.join(output_dir,'meshes/'+'out_mesh_'+snapshot_name+'.obj')
@@ -322,20 +318,10 @@ def fit_single_frame(imgs,
             baseColorFactor=(1.0, 1.0, 0.9, 1.0))
         mesh = pyrender.Mesh.from_trimesh(out_mesh, material=material)
         for camera_index, camera in enumerate(cameras):
-            '''persp_camera = camera
-            scene = pyrender.Scene(bg_color=[0.0, 0.0, 0.0, 0.0],ambient_light=(0.3, 0.3, 0.3))
-            scene.add(mesh, 'mesh')
-            camera_center = camera.center.detach().cpu().numpy().squeeze()
-            camera_transl = camera.translation.detach().cpu().numpy().squeeze().copy()
-            camera_transl[0] *= -1.0 # ??? find out why it changes camera.translation itself, causes issues later
-            camera_pose = np.eye(4)
-            camera_pose[:3, 3] = camera_transl'''
-
             input_img = imgs[camera_index].detach().cpu().numpy()
             output_img = input_img
 
             cam_param_dict = {}
-
             R = camera.rotation[0].detach()
             t = camera.translation[0].detach()
             cam_param_dict['translation'] = (-R.T@t).tolist()
@@ -344,18 +330,9 @@ def fit_single_frame(imgs,
             with open(osp.join(output_dir,"results/","cam_pose_"+snapshot_name+"_"+str(camera_index)+".json"), 'w') as fp:
                 json.dump(cam_param_dict, fp)
 
-            #model_output = body_model(return_verts=True)
-            
             projected_keypoints = persp_camera(torch.Tensor([[torch.mean(torch.index_select(model_output.vertices, 1, torch.tensor(keypoint_ids.astype(np.int32)))[0],axis=0).tolist() for keypoint_ids in key_vids[0]]]))
             all_vertices_projected = persp_camera(model_output.vertices)
             img = pil_img.fromarray((output_img * 255).astype(np.uint8))
-
-
-            # TODO: remove this
-            '''img = pil_img.open("36490.jpg")
-            all_vertices_projected *= 3
-            projected_keypoints *= 3
-            keypoints[0] *= 3'''
 
             plt.clf()
             plt.imshow(img)
@@ -381,11 +358,8 @@ def fit_single_frame(imgs,
                 if gt[0] or gt[1]:
                     plt.plot([gt[0], proj[0]], [gt[1], proj[1]], c='r', lw=input_img.shape[1] * 0.0002)
             plt.axis('off')
-            #plt.show()
-            #plt.savefig(out_img_fn+'_cam_'+str(camera_index)+'_keypoints.png',bbox_inches='tight', dpi=387.1, pad_inches=0)
             image_dir = osp.join(output_dir, "images/",snapshot_name+"/")
             plt.savefig(osp.join(image_dir,str(camera_index)+'_keypoints.png'),bbox_inches='tight', dpi=387.1, pad_inches=0)
-            #img.save(out_img_fn)
         print('Took ', time.time()-vis_start, 'for the visualisation stage')
 
 def log_to_smalify(translation,rotation_euler):

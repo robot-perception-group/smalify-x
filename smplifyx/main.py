@@ -33,7 +33,7 @@ from camera import create_camera
 from prior import create_prior
 
 def main(**args):
-    print(args)
+    #print(args)
     output_folder = 'output'
     result_folder = output_folder+'/results'
     mesh_folder = output_folder+'/meshes'
@@ -41,7 +41,7 @@ def main(**args):
     start = time.time()
     betas = torch.Tensor([[float(el) for el in args['zebra_betas']]])
     model_params = dict(model_path=args.get('model_folder'),
-                        create_global_orient=not args.get('use_yaw'), 
+                        create_global_orient=not args.get('yaw_only'), 
                         create_body_pose=not args.get('use_vposer'),
                         create_betas=True,
                         create_transl=True,
