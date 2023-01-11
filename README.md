@@ -16,7 +16,7 @@ Please read carefully the [terms and conditions](https://github.com/vchoutas/smp
 
 ## Description
 
-This repository contains fitting code for the SMAL animal model, optimized for data collected from drones. Unlike [SMALR](https://github.com/silviazuffi/smalr_online), it uses pytorch instead of chumpy, in analogy with [SMPLify-x](https://github.com/vchoutas/smplify-x). This makes optimization significantly more efficient than SMALR. The code mostly follows the structure of [SMPLify-x](https://github.com/vchoutas/smplify-x). In this pipeline, however, it is assumed that camera extrinsics and intrinsics are known, and that animals are located close to the ground plane. Animal pose is then estimated in the coodinate frame of the cameras. Cameras are expected to look towards the ground, as is usually the case with drone footage. Functionality for multiview pose estimation is present but requires additional tweaking. This repository is a part of a project "Animal Pose Estimation with UAVs" described in [this video](https://www.youtube.com/watch?v=EiarAs1s7wg&ab_channel=AamirAhmad).
+This repository contains fitting code for the SMAL animal model, optimized for data collected from drones. Unlike [SMALR](https://github.com/silviazuffi/smalr_online), it uses pytorch instead of chumpy, in analogy with [SMPLify-x](https://github.com/vchoutas/smplify-x). This makes optimization significantly more efficient than SMALR. The code mostly follows the structure of [SMPLify-x](https://github.com/vchoutas/smplify-x). In this pipeline, however, it is assumed that camera extrinsics and intrinsics are known, and that animals are located close to the ground plane. Animal pose is then estimated in the coodinate frame of the cameras. Cameras are expected to look towards the ground, as is usually the case with drone footage. The code is designed to support multiview pose estimation, a demo will be provided soon. This repository is a part of a project "Animal Pose Estimation with UAVs" described in [this video](https://www.youtube.com/watch?v=EiarAs1s7wg&ab_channel=AamirAhmad).
 
 ## Usage
 
@@ -51,13 +51,18 @@ The results should appear in the output folder. Meshes can be visualised, for ex
 
 ### Using your own data
 To run optimization on your own data, create the data structure as follows: 
- - cam_name.json with keypoints observed from the camera
- - cam_name_pose.json with camera pose
- - images/ folder with corresponding images
+ - `cam_name.json` with keypoints observed from the camera
+ - `cam_name_pose.json` with camera pose
+ - `images/` folder with corresponding images
  
  In the json files, image names correspond to frame numbers in videos. For each keypoint, 3 numbers are provided: the keypoint's 2D coordinates in the image plane and its presence. Presence takes values 0 or 1 and indicates whether the keypoint should be used for fitting. The list of keypoints and their order is provided in [this file](./smplifyx/landmark_names.txt).
 
-An data example is provided in the demo_data directory. Optionally, instead of the images/ folder a video can be provided, e.g. cam_name.mp4. If using this option, please change the 'dataset' field to 'video_animal' in the configuration file.
+Example data is provided in the `demo_data` directory.
+
+### Additional Features
+
+ - Optionally, instead of the `images/` folder a video can be provided, e.g. `cam_name.mp4`. If using this option, please change the `dataset` field to `video_animal` in the configuration file.
+ - If the animal is not expected to lean forwards, backwards or to the sides, the `yaw_only` parameter can be set to `True` in the configuration file. This effectively acts as a prior on the animal pose, allowing it to rotate in the "yaw" but not in the "pitch or roll" directions.
 
 
 ### Optional Dependencies
