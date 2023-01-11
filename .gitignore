@@ -115,5 +115,5 @@ venv.bak/
 
 
 output/
-smalifyx/*.pkl
-smalifyx/*.npz
+smalify/*.pkl
+smalify/*.npz

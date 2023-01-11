@@ -31,7 +31,7 @@ This repository contains fitting code for the SMAL animal model, optimized for d
     4. pip install -r requirements.txt
  - The original SMAL model file (.pkl) contains data structures defined in chumpy library. We provide a patch to eliminate this dependency: 
 ```Shell
-cd smalifyx
+cd smalify
 python model_patch.py
 cd ..
 ```
@@ -40,11 +40,11 @@ cd ..
 
 To run a demo, use the following command:
 ```Shell
-python smalifyx/main.py \
+python smalify/main.py \
   --config cfg_files/fit_smal.yaml \
   --data_folder demo_data \
   --visualize True \
-  --model_folder smalifyx/SMAL.pkl \
+  --model_folder smalify/SMAL.pkl \
 ```
 The results should appear in the output folder. Meshes can be visualised, for example, in Blender.
 
@@ -55,7 +55,7 @@ To run optimization on your own data, create the data structure as follows:
  - `cam_name_pose.json` with camera pose
  - `images/` folder with corresponding images or a video, see details below
  
- In the json files, each frame is associated with a unique id number. In case of a video input, these ids correspond to frame numbers. In case of image inputs, they correspond to image names. For each keypoint, 3 values are provided: the keypoint's 2D coordinates in the image plane and its presence. Presence takes values 0 or 1 and indicates whether the keypoint should be used for fitting. The list of keypoints and their order is provided in [this file](./smalifyx/landmark_names.txt).
+ In the json files, each frame is associated with a unique id number. In case of a video input, these ids correspond to frame numbers. In case of image inputs, they correspond to image names. For each keypoint, 3 values are provided: the keypoint's 2D coordinates in the image plane and its presence. Presence takes values 0 or 1 and indicates whether the keypoint should be used for fitting. The list of keypoints and their order is provided in [this file](./smalify/landmark_names.txt).
 
 Example data is provided in the `demo_data` directory.
 
