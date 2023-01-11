@@ -46,7 +46,7 @@ python smplifyx/main.py \
   --model_folder smplifyx/SMAL.pkl \
 ```
 The results should appear in the output folder. Meshes can be visualised, for example, in Blender:
-![Mesh Example](./images/mesh_example.png)
+![Mesh Example](./images/zebra_demo.gif)
 
 
 ### Using your own data
