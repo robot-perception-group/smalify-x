@@ -71,7 +71,7 @@ def fit_single_frame(imgs,
     device = torch.device('cuda') if use_cuda else torch.device('cpu')
     use_vposer = kwargs.get('use_vposer', True)
     vposer, pose_embedding = [None, ] * 2
-    body_mean_pose = np.load('smplifyx/walking_toy_symmetric_35parts_mean_pose.npz')['mean_pose'][3:]
+    body_mean_pose = np.load('smalifyx/walking_toy_symmetric_35parts_mean_pose.npz')['mean_pose'][3:]
 
     keypoint_data = torch.tensor(keypoints, dtype=dtype)
     gt_joints = keypoint_data[:,:, :, :2]
@@ -91,7 +91,7 @@ def fit_single_frame(imgs,
             weight_list[key] = torch.tensor(weight_list[key],device=device,dtype=dtype)
     # The indices of the joints used for the initialization of the camera
     init_joints_idxs = torch.tensor([12,13,10,11,7,8,9], device=device) # excluded 18 (neck) #torch.tensor([7, 18,  13,  18], device=device) # torch.tensor([23, 25,  13,  15], device=device)#torch.tensor(init_joints_idxs, device=device)
-    key_vids = [np.load('smplifyx/key_vids.npy', allow_pickle=True)]
+    key_vids = [np.load('smalifyx/key_vids.npy', allow_pickle=True)]
 
     camera_loss = fitting.create_loss('camera_init',
                                 init_joints_idxs=init_joints_idxs,

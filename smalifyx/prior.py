@@ -99,7 +99,7 @@ class MahalanobisShapePrior(nn.Module):
     def __init__(self, family_name='horse', data_name='smal_data_00781_4_all.pkl', dtype=DEFAULT_DTYPE, reduction='sum', **kwargs):
         super(MahalanobisShapePrior, self).__init__()
 
-        shape_prior = MultiShapePrior(family_name='horse', data_name='smplifyx/smal_data_00781_4_all.pkl')
+        shape_prior = MultiShapePrior(family_name='horse', data_name='smalifyx/smal_data_00781_4_all.pkl')
         self.register_buffer('mu', torch.tensor(shape_prior.mu, dtype=dtype))
         self.register_buffer('prec', torch.tensor(shape_prior.prec, dtype=dtype))
 
@@ -118,7 +118,7 @@ class MahalanobisBodyPrior(nn.Module):
     def __init__(self, dtype=DEFAULT_DTYPE, **kwargs):
         super(MahalanobisBodyPrior, self).__init__()
 
-        prior_path = 'smplifyx/walking_toy_symmetric_pose_prior_with_cov_35parts.pkl'
+        prior_path = 'smalifyx/walking_toy_symmetric_pose_prior_with_cov_35parts.pkl'
         with open(prior_path, 'rb') as f:
             res = pickle.load(f, encoding='latin1')
         self.register_buffer('precs', torch.tensor(np.array(res['pic']), dtype=dtype))
