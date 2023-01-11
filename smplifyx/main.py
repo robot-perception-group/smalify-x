@@ -77,13 +77,12 @@ def main(**args):
 
 
         for i, _ in enumerate(imgs):
+
             imgs[i] = cv2.resize(imgs[i], dsize=(img_scaled_w, img_scaled_h), interpolation=cv2.INTER_CUBIC)
             keypoints[i][0][:,:2] = keypoints[i][0][:,:2] / img_scaling_factor
         snapshot_name = data['snapshot_name']
-        #if int(data['snapshot_name'])<36470:
+        #if int(data['snapshot_name'])<36490:
         #    continue
-        #if int(data['snapshot_name'])>36530:
-        #    break
         curr_image_folder = osp.join(output_folder, "images/", snapshot_name)
         print('Processing: {}'.format(snapshot_name))
         #curr_result_folder = osp.join(result_folder, snapshot_name)

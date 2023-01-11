@@ -219,6 +219,7 @@ def fit_single_frame(imgs,
         new_params = defaultdict(body_pose=body_mean_pose,
                                  betas=betas,
                                  #global_orient=body_model.global_orient,
+                                 yaw=body_model.yaw,
                                  transl = body_model.transl)
         body_model.reset_params(**new_params)
 
@@ -348,15 +349,23 @@ def fit_single_frame(imgs,
             projected_keypoints = persp_camera(torch.Tensor([[torch.mean(torch.index_select(model_output.vertices, 1, torch.tensor(keypoint_ids.astype(np.int32)))[0],axis=0).tolist() for keypoint_ids in key_vids[0]]]))
             all_vertices_projected = persp_camera(model_output.vertices)
             img = pil_img.fromarray((output_img * 255).astype(np.uint8))
+
+
+            # TODO: remove this
+            '''img = pil_img.open("36490.jpg")
+            all_vertices_projected *= 3
+            projected_keypoints *= 3
+            keypoints[0] *= 3'''
+
             plt.clf()
             plt.imshow(img)
             keypoint_circle_size = input_img.shape[1]*0.00005
             plt.scatter(x=all_vertices_projected[0,:,0].detach().numpy(), y=all_vertices_projected[0,:,1].detach().numpy(), c='w', s=keypoint_circle_size*1e-2)
             plt.scatter(x=projected_keypoints[0,:,0].detach().numpy(), y=projected_keypoints[0,:,1].detach().numpy(), c='r', s=keypoint_circle_size)
             plt.scatter(x=keypoints[camera_index][0,:,0], y=keypoints[camera_index][0,:,1], c='g', s=keypoint_circle_size)
-            plt.scatter(x=keypoints[camera_index][0, init_joints_idxs, 0], y=keypoints[camera_index][0, init_joints_idxs, 1], c='b', s=keypoint_circle_size)
+            #plt.scatter(x=keypoints[camera_index][0, init_joints_idxs, 0], y=keypoints[camera_index][0, init_joints_idxs, 1], c='b', s=keypoint_circle_size)
             #plt.scatter(x=init_2d_keypoint[0], y=init_2d_keypoint[1], s=30*keypoint_circle_size,c='orange', marker='o')
-            plt.scatter(x=init_2d_keypoint[0], y=init_2d_keypoint[1], color='orange', s=keypoint_circle_size*2)
+            #plt.scatter(x=init_2d_keypoint[0], y=init_2d_keypoint[1], color='orange', s=keypoint_circle_size*2)
 
             # a grid around origin as a reference
             '''unit_z_point = persp_camera(torch.Tensor([[[0,0,1]]]))
