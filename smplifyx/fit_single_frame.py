@@ -112,8 +112,6 @@ def fit_single_frame(imgs,
         with torch.no_grad():
             if not yaw_only:
                 body_model.global_orient = torch.nn.Parameter(torch.Tensor([[1.2,1.2, -1.2]]))
-            #body_model.yaw = torch.nn.Parameter(torch.Tensor([np.pi/2]))#torch.Tensor([[0, 2.2, -2.2]])) #[[0, 2.2, -2.2]]))
-
 
             for camera_i, camera in enumerate(cameras):
                 log_translation = torch.Tensor(cam_poses[camera_i][0][14:17])
@@ -121,11 +119,8 @@ def fit_single_frame(imgs,
                 log_rotation_euler = torch.Tensor([0,-np.pi/3,np.pi/2])
 
                 camera.global_translation[:] = log_to_smalify(log_translation,log_rotation_euler)[0]
-                #cR_euler = log_to_smalify(log_translation,log_rotation_euler)[1]
-                #cR = transforms.euler_angles_to_matrix(cR_euler, convention="XYZ")
                 cR = transforms.euler_angles_to_matrix(log_to_smalify(log_translation,log_rotation_euler)[1], convention="YXZ")
                 R = torch.inverse(cR)
-                #rotation_matrix = transforms.euler_angles_to_matrix(torch.Tensor([-float(cam_poses[camera_i][0][17]), np.pi/2+float(cam_poses[camera_i][0][19]),-np.pi/2+float(cam_poses[camera_i][0][18])]), convention="ZXY")
                 rotation_aa = transforms.matrix_to_axis_angle(R)
                 camera.rotation_aa[:] = rotation_aa 
                 camera.global_translation.requires_grad = False
@@ -143,12 +138,7 @@ def fit_single_frame(imgs,
             init_3d_keypoint = torch.inverse(M_ext)@init_2d_keypoint.T
             body_model.transl[:] = torch.nn.Parameter((init_3d_keypoint / init_3d_keypoint[3])[:3])
             
-
-
         camera_opt_params = []
-        #for camera in cameras:
-        #    camera.rotation_aa.requires_grad = True
-        #    camera_opt_params.append(camera.rotation_aa)
 
         body_model.transl.requires_grad = True
         camera_opt_params.append(body_model.transl)
@@ -159,9 +149,6 @@ def fit_single_frame(imgs,
         else:
             body_model.global_orient.requires_grad = True
             camera_opt_params.append(body_model.global_orient)
-
-        
-
 
         camera_optimizer, camera_create_graph = optim_factory.create_optimizer(
             camera_opt_params,
@@ -189,12 +176,8 @@ def fit_single_frame(imgs,
 
         results = []
 
-
-
-
         # Step 2: Optimize the full model
         final_loss_val = 0
-
         loss = fitting.create_loss(loss_type=loss_type,
                                     rho=rho,
                                     use_joints_conf=use_joints_conf,
@@ -207,9 +190,7 @@ def fit_single_frame(imgs,
                                     key_vids=key_vids,
                                     **kwargs)
         loss = loss.to(device=device)
-
         opt_start = time.time()
-
         new_params = defaultdict(body_pose=body_mean_pose,
                                  betas=betas,
                                  transl = body_model.transl)
@@ -218,18 +199,15 @@ def fit_single_frame(imgs,
         else:
             new_params["global_orient"] = body_model.global_orient
             
-
         body_model.reset_params(**new_params)
 
         for opt_idx, curr_weights in enumerate(tqdm(opt_weights, desc='Stage')):
 
             body_model.transl.requires_grad = True
-            #body_model.betas.requires_grad = True
             if yaw_only:
                 body_model.yaw.requires_grad = True
             else:
                 body_model.body_pose.requires_grad = True
-            #body_model.global_orient.requires_grad = True
 
             body_params = list(body_model.parameters())
 
@@ -305,7 +283,6 @@ def fit_single_frame(imgs,
         mesh_dict['faces'] = body_model.faces.tolist()
         with open(mesh_fn.split(".")[-2]+".json", 'w') as fp:
             json.dump(mesh_dict, fp)
-
 
     persp_camera = camera
 

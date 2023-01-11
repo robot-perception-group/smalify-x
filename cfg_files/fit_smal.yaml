@@ -1,4 +1,4 @@
-dataset: 'image_animal'
+dataset: 'video_animal'
 data_folder: "data"
 prior_folder: 'priors'
 model_type: 'smpl'
@@ -19,13 +19,9 @@ num_pca_comps: 12
 rho: 150
 interpenetration: False
 df_cone_height: 0.0001
-# Upper arms and Spine 2
-# Neck and jaw
 ign_part_pairs: ["9,16", "9,17", "6,16", "6,17", "1,2", "12,22"]
 penalize_outside: True
 max_collisions: 128
-# LBFGS with line search
-#optim_type: 'lbfgs'
 optim_type: 'adam'
 ftol: 1e-9
 gtol: 1e-9

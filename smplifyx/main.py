@@ -33,7 +33,6 @@ from camera import create_camera
 from prior import create_prior
 
 def main(**args):
-    #print(args)
     output_folder = 'output'
     result_folder = output_folder+'/results'
     mesh_folder = output_folder+'/meshes'
@@ -73,11 +72,8 @@ def main(**args):
         img_scaled_h = round(imgs[0].shape[0] / img_scaling_factor)
 
         
-        
-
 
         for i, _ in enumerate(imgs):
-
             imgs[i] = cv2.resize(imgs[i], dsize=(img_scaled_w, img_scaled_h), interpolation=cv2.INTER_CUBIC)
             keypoints[i][0][:,:2] = keypoints[i][0][:,:2] / img_scaling_factor
         snapshot_name = data['snapshot_name']
@@ -85,14 +81,12 @@ def main(**args):
         #    continue
         curr_image_folder = osp.join(output_folder, "images/", snapshot_name)
         print('Processing: {}'.format(snapshot_name))
-        #curr_result_folder = osp.join(result_folder, snapshot_name)
         if not osp.exists(result_folder):
             os.makedirs(result_folder)
         if not osp.exists(mesh_folder):
             os.makedirs(mesh_folder)
         if not osp.exists(curr_image_folder):
             os.makedirs(curr_image_folder)
-
 
         fit_single_frame(imgs, keypoints, cam_poses,
                          body_model=body_model,
@@ -105,6 +99,7 @@ def main(**args):
                          cam_pose_prior=cam_pose_prior,
                          betas=betas,
                          **args)
+                         
     elapsed = time.time() - start
     time_msg = time.strftime('%H hours, %M minutes, %S seconds',time.gmtime(elapsed))
     print('Processing the data took: {}'.format(time_msg))

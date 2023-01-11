@@ -72,12 +72,6 @@ Example data is provided in the `demo_data` directory.
 2. [Trimesh](https://trimsh.org/) for loading triangular meshes
 3. [Pyrender](https://pyrender.readthedocs.io/) for visualization
 
-### LBFGS with Strong Wolfe Line Search
-
-The LBFGS optimizer with Strong Wolfe Line search is taken from this [Pytorch pull request](https://github.com/pytorch/pytorch/pull/8824). Special thanks to 
-[Du Phan](https://github.com/fehiepsi) for implementing this. 
-We will update the repository once the pull request is merged.
-
 ## Contact
 This project was built upon [SMALR](https://github.com/silviazuffi/smalr_online) and [SMPLify-X](https://github.com/vchoutas/smplify-x) by [Egor Iuganov](mailto:egor.iuganov@ifr.uni-stuttgart.de) from the [Flight Robotics and Perception Group](https://www.aamirahmad.de/).
 

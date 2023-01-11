@@ -292,13 +292,9 @@ class SMPLifyCameraInitLoss(nn.Module):
             visible_vids = np.hstack([key_vids[i][id].astype(int) for id in use_ids])
             group = np.hstack([index * np.ones(len(key_vids[i][row_id])) for index, row_id in enumerate(use_ids)])
             assignments = np.vstack([group == j for j in np.arange(group[-1] + 1)])
-            # assignments = torch.Tensor(assignments)
             num_points = len(use_ids)
             all_vids = visible_vids
-            # cam[i].v = sv[i][all_vids, :]
             j2d = torch.Tensor(landmarks[i][use_ids, :2])
-            #kp_weights = np.ones((landmarks[i].shape[0], 1))
-            #kp_weights = torch.Tensor(kp_weights)
             projected_joints = camera(torch.index_select(body_model_output.vertices, 1, torch.tensor(all_vids)))
             projected_joints = projected_joints[0]
             kp_proj = torch.sqrt(self.robustifier(torch.vstack(
@@ -306,9 +302,7 @@ class SMPLifyCameraInitLoss(nn.Module):
                  assignments]) - j2d)) / np.sqrt(num_points)
             #cam_pose_loss += self.cam_pose_prior(camera.translation - self.cam_prior_poses[camera_index][:3]) * self.cam_pose_weight ** 2
             joint_loss += torch.square(self.data_weight) * torch.sum(torch.square(kp_proj))
-            # is the index 2 correct??
             self.losses_log.append(joint_loss.detach().tolist()[0])
-            #print(self.losses_log)
-        return joint_loss #+ depth_loss #+ cam_pose_loss
+        return joint_loss
 
 
