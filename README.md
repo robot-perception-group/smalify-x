@@ -1,5 +1,6 @@
 ## Fitting Articulated Animal Model (SMAL) to Multiview Keypoints Using pytorch
 
+![Mesh Example](./images/zebra_demo.gif)
 ![SMAL Example](./images/teaser_fig.png)
 
 ## Table of Contents
@@ -45,8 +46,7 @@ python smplifyx/main.py \
   --visualize True \
   --model_folder smplifyx/SMAL.pkl \
 ```
-The results should appear in the output folder. Meshes can be visualised, for example, in Blender:
-![Mesh Example](./images/zebra_demo.gif)
+The results should appear in the output folder. Meshes can be visualised, for example, in Blender.
 
 
 ### Using your own data
