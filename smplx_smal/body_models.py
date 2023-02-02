@@ -45,15 +45,8 @@ from pytorch3d import transforms
 
 class SMPL(nn.Module):
 
-    # °°°°° 
-    # NUM_JOINTS = 23
-    # NUM_BODY_JOINTS = 23
-
-    NUM_JOINTS = 34
-    NUM_BODY_JOINTS = 34
-
-    #NUM_JOINTS = 32
-    #NUM_BODY_JOINTS = 32
+    NUM_JOINTS = 35
+    NUM_BODY_JOINTS = 35
 
     SHAPE_SPACE_DIM = 300
 

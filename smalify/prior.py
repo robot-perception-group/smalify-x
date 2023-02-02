@@ -118,23 +118,15 @@ class MahalanobisBodyPrior(nn.Module):
     def __init__(self, dtype=DEFAULT_DTYPE, **kwargs):
         super(MahalanobisBodyPrior, self).__init__()
 
-        prior_path = 'smalify/walking_toy_symmetric_pose_prior_with_cov_35parts.pkl'
+        prior_path = 'smalify/hsmal_files/walking_toy_symmetric_smal_0000_new_skeleton_pose_prior_new_36parts.pkl'
         with open(prior_path, 'rb') as f:
             res = pickle.load(f, encoding='latin1')
         self.register_buffer('precs', torch.tensor(np.array(res['pic']), dtype=dtype))
         self.register_buffer('mu', torch.tensor(res['mean_pose'], dtype=dtype))
-        prefix = 3
-        if '35parts' in prior_path:
-            pose_len = 105
-        else:
-            raise ValueError('"35parts" not in pose prior name')
-
-        self.use_ind = np.ones(pose_len, dtype=bool)
-        #self.use_ind[:prefix] = False
 
     def forward(self, x, *args):
         dummy_loss = torch.matmul(x[0] - self.mu, self.precs) # SMALR loss
-        loss = torch.sum(torch.square(torch.matmul(x[0] - self.mu, self.precs))) / torch.Tensor([102])
+        loss = torch.sum(torch.square(torch.matmul(x[0] - self.mu, self.precs))) / torch.Tensor([105])
         #print("PriorPose: ", loss, "\n")
         return loss
 

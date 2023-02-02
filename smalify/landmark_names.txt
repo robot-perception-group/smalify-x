@@ -1,30 +1,37 @@
-- left eye
-- right eye
-- chin
-- front left foot
-- front right foot
-- back left foot
-- back right foot
-- tail start
-- front left knee
-- back left knee
-- back right knee
-- left shoulder
-- right shoulder
-- front left ankle
-- front right ankle
-- back left ankle
-- back right ankle
-- neck
-- tail tip
-- left ear
-- right ear
-- left nostril
-- right nostril
-- mouth (left side)
-- mouth (right side)
-- left cheek
-- right cheek
-- mane
-- back
-- croup
+Landmark names and corresponding hSMAL vertex ids
+
+- left eye 378
+- right eye 1191
+- chin 571
+- front left foot 482
+- front right foot 1295
+- back left foot 451
+- back right foot 1264
+- tail start 604
+- front left knee 193
+- front right knee 1006
+- back left knee 681
+- back right knee 1403
+- left shoulder 186
+- right shoulder 999
+- front left ankle 9
+- front right ankle 822
+- back left ankle 51
+- back right ankle 864
+- neck 944/129
+- tail tip 759
+- left ear 226
+- right ear 1039
+- left nostril 346
+- right nostril 1165
+- mouth (left side) 320
+- mouth (right side) 1135
+- left cheek 369
+- right cheek 1182
+- mane 607
+- back 533
+- croup 578
+
+
+
+

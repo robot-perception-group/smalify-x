@@ -117,3 +117,6 @@ venv.bak/
 output/
 smalify/*.pkl
 smalify/*.npz
+smalify/hsmal_files/*.pkl
+smalify/hsmal_files/*.npz
+*.ipynb

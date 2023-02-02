@@ -71,7 +71,8 @@ def fit_single_frame(imgs,
     device = torch.device('cuda') if use_cuda else torch.device('cpu')
     use_vposer = kwargs.get('use_vposer', True)
     vposer, pose_embedding = [None, ] * 2
-    body_mean_pose = np.load('smalify/walking_toy_symmetric_35parts_mean_pose.npz')['mean_pose'][3:]
+    #body_mean_pose = np.load('smalify/walking_toy_symmetric_35parts_mean_pose.npz')['mean_pose'][3:]
+    body_mean_pose = np.zeros(105)
 
     keypoint_data = torch.tensor(keypoints, dtype=dtype)
     gt_joints = keypoint_data[:,:, :, :2]
