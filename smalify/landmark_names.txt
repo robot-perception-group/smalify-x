@@ -1,4 +1,28 @@
-Landmark names and corresponding hSMAL vertex ids
+If your data is in COCO format, please provide keypoints for each annotation in the following order:
+
+left eye
+right eye
+chin
+neck
+tail start
+front left knee
+front left ankle
+front left foot
+front right knee
+front right ankle
+front right foot
+back left knee
+back left ankle
+back left foot
+back right knee
+back right ankle
+back right foot
+
+This is the order in which ViTPose+ produces keypoints.
+
+
+
+Otherwise, please provide keypoints in the order below. The numbers correspond to hSMAL model vertex ids.
 
 - left eye 378
 - right eye 1191

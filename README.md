@@ -52,17 +52,17 @@ The results should appear in the output folder. Meshes can be visualised, for ex
 
 ### Using your own data
 To run optimization on your own data, create the data structure as follows: 
- - `cam_name.json` with keypoints observed from the camera
+ - `cam_name_coco.json` with keypoints observed from the camera
  - `cam_name_pose.json` with camera pose
  - `images/` folder with corresponding images or a video, see details below
  
- In the json files, each frame is associated with a unique id number. In case of a video input, these ids correspond to frame numbers. In case of image inputs, they correspond to image names. For each keypoint, 3 values are provided: the keypoint's 2D coordinates in the image plane and its presence. Presence takes values 0 or 1 and indicates whether the keypoint should be used for fitting. The list of keypoints and their order is provided in [this file](./smalify/landmark_names.txt).
+ In the json files, each frame is associated with a unique id number. In case of a video input, these ids correspond to frame numbers. In case of image inputs, they correspond to image names. The list of keypoints and their order is provided in [this file](./smalify/landmark_names.txt).
 
 Example data is provided in the `demo_data` directory.
 
 ### Additional Features
 
- - Optionally, instead of the `images/` folder a video can be provided, e.g. `cam_name.mp4`. If using this option, please change the `dataset` field to `video_animal` from `image_animal` in the configuration file.
+ - Input data can be provided in different forms. This branch works reliably with images and annotations in COCO format, see [landmark_names.txt](./smalify/landmark_names.txt) for details. This mode corresponds to the `dataset` field set to `coco_image_animal` in the configuration file. The following options are not the focus of this branch and need additional testing. If not using COCO keypoint format, switch `dataset` to `image_animal`. Optionally, instead of the `images/` folder a video can be provided, e.g. `cam_name.mp4`. If using this option, please change the `dataset` field to `video_animal`.
  - If the animal is not expected to lean forwards, backwards or to the sides, the `yaw_only` parameter can be set to `True` in the configuration file. This effectively acts as a prior on the animal pose, allowing it to rotate in the "yaw" but not in the "pitch" or "roll" directions.
 
 
