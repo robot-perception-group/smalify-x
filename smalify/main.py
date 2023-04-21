@@ -63,9 +63,17 @@ def main(**args):
         **args)
     angle_prior = create_prior(prior_type='angle', dtype=args['dtype'])
     cam_pose_prior = create_prior(prior_type=args.get('cam_prior_type', 'l2'),**args)
+
     for idx, data in enumerate(dataset_obj):
+
+        snapshot_name = data['snapshot_name']
+        print(f"Currently processing snapshot {snapshot_name}")
+        
+
         imgs = data['imgs'][0]
         keypoints = data['keypoints'][0]
+        if not keypoints:
+            continue
         cam_poses = data['cam_poses'][0]
         img_scaled_w = 1280
         img_scaling_factor = imgs[0].shape[1] / img_scaled_w
@@ -76,9 +84,7 @@ def main(**args):
         for i, _ in enumerate(imgs):
             imgs[i] = cv2.resize(imgs[i], dsize=(img_scaled_w, img_scaled_h), interpolation=cv2.INTER_CUBIC)
             keypoints[i][0][:,:2] = keypoints[i][0][:,:2] / img_scaling_factor
-        snapshot_name = data['snapshot_name']
-        #if int(data['snapshot_name'])<36490:
-        #    continue
+
         curr_image_folder = osp.join(output_folder, "images/", snapshot_name)
         print('Processing: {}'.format(snapshot_name))
         if not osp.exists(result_folder):

@@ -52,6 +52,8 @@ def create_dataset(dataset='openpose', data_folder='data', **kwargs):
         return VideoAnimalData(data_folder)
     elif dataset.lower() == 'image_animal':
         return ImageAnimalData(data_folder)
+    elif dataset.lower() == 'coco_image_animal':
+        return COCOImageAnimalData(data_folder, individual_id=kwargs["individual_id"])
     else:
         raise ValueError('Unknown dataset: {}'.format(dataset))
 
@@ -221,7 +223,7 @@ class VideoAnimalData(Dataset):
             im = cv2.resize(im, (1280,720)) / 255.0
             imgs.append(im)
             keypoints.append(np.array([kp[timestamp]['zebra_0']]))
-            poses.append(np.array([[float(el) for el in pose[timestamp]]]))
+            poses.append(np.array([[float(el) for el in pose[timestamp][:20]]]))
         output_dict = {'cam_names': [self.cam_names],
                         'snapshot_name': timestamp,
                         'keypoints': [keypoints],
@@ -299,5 +301,80 @@ class ImageAnimalData(Dataset):
         if self.cnt >= len(self.kps[0]):
             raise StopIteration
         timestamp =list(self.kps[0].keys())[self.cnt]
+        self.cnt += 1
+        return self.read_item(timestamp)
+
+
+class COCOImageAnimalData(Dataset):
+    def __init__(self, data_folder,
+                 fps=30000.0/1001.0,
+                 dtype=torch.float32,
+                 individual_id="zebra_0"):
+        super(COCOImageAnimalData, self).__init__()
+
+        self.individual_id = individual_id
+        self.data_folder = data_folder
+        self.cam_names = os.listdir(osp.join(self.data_folder, "images/"))
+        self.cam_names = sorted(self.cam_names)
+
+        self.im_names = os.listdir(osp.join(self.data_folder, "images/")+self.cam_names[0])
+        self.im_names.sort()
+
+        self.kp_paths = [osp.join(self.data_folder, cam_name+"_coco.json") for cam_name in self.cam_names]
+        self.kps = []
+        for kp_path in self.kp_paths:
+            with open(kp_path, 'r') as f:
+                self.kps.append(json.load(f))
+
+        self.pose_paths = [osp.join(self.data_folder, cam_name+"_pose.json") for cam_name in self.cam_names]
+        self.poses = []
+        for pose_path in self.pose_paths:
+            with open(pose_path, 'r') as f:
+                self.poses.append(json.load(f))
+
+        self.cnt = 0
+
+    def __len__(self):
+        return len(self.im_names)
+
+    def __getitem__(self, idx):
+        im_name = self.im_names[idx]
+        timestamp = int(im_name.split(".")[0])
+        return self.read_item(timestamp)
+
+    def read_item(self, timestamp):
+        keypoints = []
+        poses = []
+        imgs = []
+        for cam_name, kp, pose in zip(self.cam_names, self.kps, self.poses):
+            image = cv2.imread(osp.join(self.data_folder, "images/", cam_name, str(timestamp).zfill(6)+".jpg"))
+            im = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) / 255
+            #im = cv2.resize(im, (1280,720)) / 255.0
+            imgs.append(im)
+
+            for annotation in kp["annotations"]:
+                if annotation["image_id"]==timestamp and (annotation["individual_id"]==self.individual_id or str(annotation["individual_id"])==self.individual_id):
+                    coco_kps = np.array(annotation["keypoints"])
+                    smplify_kps = np.zeros((31,3))
+                    smplify_kps[[0,1,2,18,7,8,14,3,9,15,6,10,16,5,11,17,6]] = coco_kps
+                    keypoints.append(np.array([smplify_kps]))
+
+            poses.append(np.array([[float(el) for el in pose[str(timestamp)]]]))
+            
+        output_dict = {'cam_names': [self.cam_names],
+                        'snapshot_name': str(timestamp),
+                        'keypoints': [keypoints],
+                        'cam_poses': [poses],
+                        'imgs': [imgs]}
+        return output_dict
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.cnt >= len(self.im_names):
+            raise StopIteration
+        im_name = self.im_names[self.cnt]
+        timestamp = int(im_name.split(".")[0])
         self.cnt += 1
         return self.read_item(timestamp)

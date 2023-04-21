@@ -193,7 +193,7 @@ class SMPLifyLoss(nn.Module):
         key_vids = self.key_vids
         landmarks_names = \
             ['leftEye','rightEye','chin','frontLeftFoot','frontRightFoot','backLeftFoot','backRightFoot',
-             'tailStart','frontLeftKnee','backLeftKnee','backRightKnee','leftShoulder','rightShoulder',
+             'tailStart','frontLeftKnee', 'frontRightKnee','backLeftKnee','backRightKnee','leftShoulder','rightShoulder',
              'frontLeftAnkle','frontRightAnkle','backLeftAnkle','backRightAnkle','neck','TailTip','leftEar',
              'rightEar','nostrilLeft','nostrilRight','mouthLeft','mouthRight','cheekLeft','cheekRight',
              'mane','back','croup']
@@ -230,9 +230,8 @@ class SMPLifyLoss(nn.Module):
             # Calculate the loss from the Pose prior
             pprior_loss += self.body_pose_prior(body_model_output.body_pose) * self.body_pose_weight ** 2
             shape_loss += self.shape_prior(body_model_output.betas) * self.shape_weight ** 2
-            body_pose = body_model_output.full_pose[:, 3:66]
-            angle_prior_loss = torch.sum(
-                self.angle_prior(body_pose)) * self.bending_prior_weight
+            #body_pose = body_model_output.full_pose[:, 3:66]
+            #angle_prior_loss = torch.sum(self.angle_prior(body_pose)) * self.bending_prior_weight
         total_loss = joint_loss + shape_loss + pprior_loss
         return total_loss
 

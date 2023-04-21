@@ -288,6 +288,9 @@ def parse_config(argv=None):
     parser.add_argument('--yaw_only', default=False,
                         type=lambda arg: arg.lower() in ['true', '1'],
                         help='Use the VAE pose embedding')
+    parser.add_argument('--individual_id', default='zebra_0',
+                        type=str,
+                        help='The ID of the individual animal.')
 
     args = parser.parse_args(argv)
 

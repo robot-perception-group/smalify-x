@@ -17,7 +17,7 @@ Please read carefully the [terms and conditions](https://github.com/vchoutas/smp
 
 ## Description
 
-This repository contains fitting code for the SMAL animal model, optimized for data collected from drones. Unlike [SMALR](https://github.com/silviazuffi/smalr_online), it uses pytorch instead of chumpy, in analogy with [SMPLify-x](https://github.com/vchoutas/smplify-x). This makes optimization significantly more efficient than SMALR. The code mostly follows the structure of SMPLify-x. In this pipeline, however, it is assumed that camera extrinsics and intrinsics are known, and that animals are located close to the ground plane. Animal pose is then estimated in the coodinate frame of the cameras. Cameras are expected to look towards the ground, as is usually the case with drone footage. The code is designed to support both single- and multiview pose estimation, a demo for multiview will be provided soon. This repository is a part of the project "Animal Pose Estimation with UAVs" described in [this video](https://www.youtube.com/watch?v=EiarAs1s7wg&ab_channel=AamirAhmad).
+This repository contains fitting code for the [hSMAL](https://sites.google.com/view/cv4horses/cv4horses) animal model, optimized for data collected from drones. Unlike [SMALR](https://github.com/silviazuffi/smalr_online), it uses pytorch instead of chumpy, in analogy with [SMPLify-x](https://github.com/vchoutas/smplify-x). This makes optimization significantly more efficient than SMALR. The code mostly follows the structure of SMPLify-x. In this pipeline, however, it is assumed that camera extrinsics and intrinsics are known, and that animals are located close to the ground plane. Animal pose is then estimated in the coodinate frame of the cameras. Cameras are expected to look towards the ground, as is usually the case with drone footage. The code is designed to support both single- and multiview pose estimation, a demo for multiview will be provided soon. This repository is a part of the project "Animal Pose Estimation with UAVs" described in [this video](https://www.youtube.com/watch?v=EiarAs1s7wg&ab_channel=AamirAhmad).
 
 ## Usage
 
@@ -44,7 +44,8 @@ python smalify/main.py \
   --config cfg_files/fit_smal.yaml \
   --data_folder demo_data \
   --visualize True \
-  --model_folder smalify/SMAL.pkl \
+  --model_folder smalify/hsmal_files/SMAL.pkl \
+  -- individual_id 1 \
 ```
 The results should appear in the output folder. Meshes can be visualised, for example, in Blender.
 

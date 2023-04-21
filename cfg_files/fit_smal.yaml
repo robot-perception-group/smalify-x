@@ -1,4 +1,4 @@
-dataset: 'image_animal'
+dataset: 'coco_image_animal'
 data_folder: "data"
 prior_folder: 'priors'
 model_type: 'smpl'
@@ -25,7 +25,7 @@ ftol: 1e-9
 gtol: 1e-9
 lr: 0.03
 # Max number of optimization iterations
-maxiters: 50
+maxiters: 100
 interactive: True
 visualize: True
 
