@@ -1,6 +1,12 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
-authors: Egor Iuganov
+authors:
+- family-names: "Iuganov"
+  given-names: "Egor"
+  orcid: ""
+- family-names: "Ahmad"
+  given-names: "Aamir"
+  orcid: ""
 title: "Fitting Articulated Animal Model (SMAL) to Multiview Keypoints Using pytorch"
 version: 0.1
 date-released: 2023-01-11
