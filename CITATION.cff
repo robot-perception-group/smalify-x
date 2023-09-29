@@ -10,3 +10,4 @@ authors:
 title: "Fitting Articulated Animal Model (SMAL) to Multiview Keypoints Using pytorch"
 version: 0.1
 date-released: 2023-01-11
+url: "https://github.com/robot-perception-group/smalify"
