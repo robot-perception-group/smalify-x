@@ -8,6 +8,7 @@ pillow
 opencv-python
 tqdm
 pyrender>=0.1.23
-trimesh>=2.37.6shapely
+trimesh>=2.37.6
+shapely
 matplotlib
 open3d-python
