@@ -44,7 +44,7 @@ python smalify/main.py \
   --config cfg_files/fit_smal.yaml \
   --data_folder demo_data \
   --visualize True \
-  --model_folder smalify/SMAL.pkl \
+  --model_folder smalify/SMAL.pkl
 ```
 The results should appear in the output folder. Meshes can be visualised, for example, in Blender.
 

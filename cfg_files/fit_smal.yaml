@@ -1,4 +1,4 @@
-dataset: 'image_animal'
+dataset: 'video_animal'
 data_folder: "data"
 prior_folder: 'priors'
 model_type: 'smpl'
@@ -27,7 +27,6 @@ lr: 0.03
 # Max number of optimization iterations
 maxiters: 50
 interactive: True
-visualize: True
 
 data_weights:
     - 5.0e2
